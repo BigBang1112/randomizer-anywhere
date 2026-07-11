@@ -1,0 +1,8 @@
+Game = ""
+
+[DownloadUrls]
+TMF = "http://files2.trackmaniaforever.com/TrackmaniaServer_2011-02-21.zip"
+TM = "http://slig.free.fr/TM/dedicated/TmDedicatedServer_2006-05-30.zip"
+
+[TmxQuery]
+primarytype = 0
