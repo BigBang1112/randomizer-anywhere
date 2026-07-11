@@ -123,7 +123,9 @@ internal sealed partial class ServerSetup
 
         var contents = await File.ReadAllTextAsync(filePath, cancellationToken);
 
-        contents = ServerNameRegex().Replace(contents, $"<server_options>$1<name>Randomizer Anywhere</name>");
+        contents = ServerNameRegex().Replace(contents, $"<server_options>$1<name>$$0BFRandomizer $$FF80.1.0</name>");
+
+        contents = XmlRpcPortRegex().Replace(contents, $"<xmlrpc_port>{config.XmlRpcPort}</xmlrpc_port>");
 
         await File.WriteAllTextAsync(filePath, contents, cancellationToken);
     }
@@ -178,11 +180,18 @@ internal sealed partial class ServerSetup
 
     public void StartServer()
     {
-        var args = string.Join(' ', [
+        var args = new List<string>
+        {
             "/game=sunrise",
             "/game_settings=MatchSettings/Randomizer.txt",
             "/dedicated_cfg=dedicated.cfg",
-        ]);
+            "/verbose_rpc"
+        };
+
+        if (config.BindIP is not null)
+        {
+            args.Add($"/bindip={config.BindIP}");
+        }
 
         serverProcess = new Process
         {
@@ -190,7 +199,7 @@ internal sealed partial class ServerSetup
             {
                 FileName = Path.Combine(dedicatedServerDir, dedicatedExeFileName),
                 WorkingDirectory = dedicatedServerDir,
-                Arguments = args,
+                Arguments = string.Join(' ', args),
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 WindowStyle = ProcessWindowStyle.Minimized, // ProcessWindowStyle.Hidden
@@ -293,4 +302,7 @@ internal sealed partial class ServerSetup
 
     [GeneratedRegex(@"<server_options>(\s*)<name>(.*?)<\/name>", RegexOptions.IgnoreCase)]
     private static partial Regex ServerNameRegex();
+
+    [GeneratedRegex(@"<xmlrpc_port>(\d+)<\/xmlrpc_port>", RegexOptions.IgnoreCase)]
+    private static partial Regex XmlRpcPortRegex();
 }

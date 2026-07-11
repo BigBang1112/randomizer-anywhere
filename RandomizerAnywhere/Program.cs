@@ -1,14 +1,15 @@
-﻿using ManiaAPI.XmlRpc;
-using Microsoft.Extensions.Http.Resilience;
+﻿using Microsoft.Extensions.Http.Resilience;
 using Polly;
-using Polly.Retry;
 using RandomizerAnywhere;
+using System.Net;
 
 var configPath = Path.Combine(AppContext.BaseDirectory, "config.toml");
 var tomlConfig = ConfigLoader.Load(configPath);
 var cmdConfig = CmdParser.Parse(args);
 var appConfig = new AppConfig
 {
+    BindIP = string.IsNullOrEmpty(tomlConfig.BindIP) ? null : IPAddress.Parse(tomlConfig.BindIP),
+    XmlRpcPort = tomlConfig.XmlRpcPort,
     DownloadUrls = tomlConfig.DownloadUrls.ToDictionary(x => Enum.Parse<DedicatedServerType>(x.Key, ignoreCase: true), x => x.Value),
     TmxQuery = cmdConfig.TmxQuery
 };
@@ -42,19 +43,8 @@ try
     await serverSetup.SetupMatchSettingsAsync();
     serverSetup.StartServer();
 
-    var pipeline = new ResiliencePipelineBuilder()
-        .AddRetry(new RetryStrategyOptions
-        {
-            MaxRetryAttempts = 5,
-            BackoffType = DelayBackoffType.Exponential
-        })
-        .Build();
-
-    await using var client = await pipeline.ExecuteAsync(async token =>
-        await XmlRpcClient.ConnectAsync("127.0.0.1", 5000, cancellationToken: token));
-
-    var sessionManager = new SessionManager(client, tmxRules);
-    await sessionManager.RunAsync();
+    var randomizerGame = new RandomizerGame(tmxRules, appConfig);
+    await randomizerGame.RunAsync();
 }
 finally
 {

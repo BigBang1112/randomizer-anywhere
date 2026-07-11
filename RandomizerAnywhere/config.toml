@@ -1,4 +1,6 @@
 Game = ""
+BindIP = ""
+XmlRpcPort = 5112
 
 [DownloadUrls]
 TMF = "http://files2.trackmaniaforever.com/TrackmaniaServer_2011-02-21.zip"
