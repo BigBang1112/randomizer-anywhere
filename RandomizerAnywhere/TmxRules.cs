@@ -1,3 +1,4 @@
+using RandomizerAnywhere.Config;
 using System.Buffers;
 using System.Globalization;
 using System.Text;
@@ -85,6 +86,8 @@ internal sealed class TmxRules
 
         var trackRelativePath = response.Headers.Location?.OriginalString ?? throw new Exception("Failed to get track relative path.");
         var trackId = trackRelativePath.Substring(trackRelativePath.LastIndexOf('/') + 1);
+
+        Console.WriteLine("Next challenge track ID: " + trackId);
 
         using var trackResponse = await http.GetAsync(GetTrackGbxUrl(trackId), cancellationToken);
         var gbxBytes = await trackResponse.Content.ReadAsByteArrayAsync(cancellationToken);

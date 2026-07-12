@@ -1,3 +1,5 @@
+using RandomizerAnywhere.Config;
+
 namespace RandomizerAnywhere;
 
 internal static class CmdParser
@@ -42,6 +44,9 @@ internal static class CmdParser
                         break;
                     }
                     cmdArgs.TmxQuery = enumerator.Current;
+                    break;
+                case "--no-server":
+                    cmdArgs.NoServer = true;
                     break;
             }
         }

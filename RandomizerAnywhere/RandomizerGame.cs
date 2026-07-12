@@ -1,124 +1,411 @@
 ﻿using ManiaAPI.XmlRpc;
-using Polly;
-using Polly.Retry;
-using System.Net;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Text;
+using RandomizerAnywhere.Config;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace RandomizerAnywhere;
 
-internal sealed class RandomizerGame
+internal sealed partial class RandomizerGame
 {
-    private readonly ResiliencePipeline connectionPipeline;
+    private readonly XmlRpcClient client;
     private readonly TmxRules tmxRules;
-    private readonly AppConfig appConfig;
+    private readonly AppConfig config;
 
-    public RandomizerGame(TmxRules tmxRules, AppConfig appConfig)
+    private readonly Dictionary<string, Func<int, string, string[], CancellationToken, Task>> commandHandlers;
+    private readonly Dictionary<string, string> nicknameCache = [];
+
+    private Stopwatch? sessionStopwatch;
+    private int sessionStopwatchMillisecondOffset;
+    private ChallengeInfo? currentChallenge;
+    private string? randomEnqueuedChallengeFileName;
+
+    private bool SessionActive => sessionStopwatch is not null;
+
+    public RandomizerGame(XmlRpcClient client, TmxRules tmxRules, AppConfig config)
     {
-        connectionPipeline = new ResiliencePipelineBuilder()
-            .AddRetry(new RetryStrategyOptions
-            {
-                MaxRetryAttempts = 5,
-                BackoffType = DelayBackoffType.Exponential
-            })
-            .Build();
+        this.client = client;
         this.tmxRules = tmxRules;
-        this.appConfig = appConfig;
-    }
-
-    public async Task RunAsync(CancellationToken cancellationToken = default)
-    {
-        await using var client = await connectionPipeline.ExecuteAsync(async token =>
-            await XmlRpcClient.ConnectAsync(IPAddress.Loopback, appConfig.XmlRpcPort, cancellationToken: token), cancellationToken);
-
-        Console.WriteLine();
-        Console.WriteLine("Ready!");
-        Console.WriteLine("The server is now available in the 'Local network' menu.");
-        Console.WriteLine("Can't see the server? Check the generated CANNOT_SEE_SERVER.txt guide.");
-        Console.WriteLine();
-
-        var cannotSeeServerBuilder = new StringBuilder();
-
-        cannotSeeServerBuilder.AppendLine("If you can't see the server in the 'Local network' menu, please try changing the BindIP in config.toml to one of these addresses and restart the app:");
-        cannotSeeServerBuilder.AppendLine();
-        foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+        this.config = config;
+        
+        commandHandlers = new()
         {
-            foreach (var ua in nic.GetIPProperties().UnicastAddresses)
+            ["start"] = StartAsync,
+            ["skip"] = SkipAsync,
+            ["imp"] = ImpossibleAsync,
+            ["commands"] = CommandsAsync,
+            ["timelimit"] = TimeLimitAsync,
+            ["tl"] = TimeLimitAsync
+        };
+
+        client.On("TrackMania.BeginRace", async (methodParams, cancellationToken) =>
+        {
+            var challengeInfo = (Dictionary<string, object>)methodParams[0];
+
+            currentChallenge = new ChallengeInfo(
+                AuthorTime: (int)challengeInfo["AuthorTime"],
+                GoldTime: (int)challengeInfo["GoldTime"],
+                SilverTime: (int)challengeInfo["SilverTime"],
+                BronzeTime: (int)challengeInfo["BronzeTime"]
+            );
+        });
+
+        client.On("TrackMania.EndRace", async (methodParams, cancellationToken) =>
+        {
+            currentChallenge = null;
+            randomEnqueuedChallengeFileName = null;
+        });
+
+        client.On("TrackMania.PlayerConnect", async (methodParams, cancellationToken) =>
+        {
+            var login = (string)methodParams[0];
+
+            var playerInfo = await client.CallAsync<Dictionary<string, object>>("GetPlayerInfo", [login], cancellationToken);
+            nicknameCache[login] = (string)playerInfo["NickName"];
+
+            if (!SessionActive)
             {
-                if (ua.Address.AddressFamily == AddressFamily.InterNetwork)
+                await SendWelcomeMessageAsync(login, cancellationToken);
+            }
+        });
+
+        client.On("TrackMania.PlayerChat", async (methodParams, cancellationToken) =>
+        {
+            var playerUid = (int)methodParams[0];
+            var login = (string)methodParams[1];
+            var message = (string)methodParams[2];
+            var isRegisteredCmd = (bool)methodParams[3];
+
+            if (isRegisteredCmd)
+            {
+                await OnCommand(playerUid, login, message, cancellationToken);
+            }
+        });
+
+        client.On("TrackMania.PlayerFinish", async (methodParams, cancellationToken) =>
+        {
+            var playerUid = (int)methodParams[0];
+            var login = (string)methodParams[1];
+            var score = (int)methodParams[2];
+
+            await OnPlayerFinish(playerUid, login, score, cancellationToken);
+        });
+
+        client.On("TrackMania.StatusChanged", async (methodParams, cancellationToken) =>
+        {
+            var statusCode = (TrackManiaStatusCode)(int)methodParams[0];
+
+            if (SessionActive)
+            {
+                switch (statusCode)
                 {
-                    cannotSeeServerBuilder.AppendLine(ua.Address.ToString());
+                    case TrackManiaStatusCode.Play:
+                        sessionStopwatch?.Start();
+                        break;
+                    case TrackManiaStatusCode.Finish:
+                        // freeze time if it was still running
+                        if (sessionStopwatch?.IsRunning == true)
+                        {
+                            sessionStopwatch.Stop();
+                            await SendFrozenTimeMessageAsync(cancellationToken);
+                        }
+                        await SetCalculatedTimeLimitAsync(cancellationToken);
+                        break;
                 }
             }
-        }
-        cannotSeeServerBuilder.AppendLine();
-        cannotSeeServerBuilder.AppendLine("Also check that your Server Port in launcher settings is set to 2350-2359 in TMF, 2350-2369 in ESWC, or 2350 in TMS/TMO. LAN discovery only scans the specified port ranges by default. The ranges can be changed by Port Broadcast Length option, but it is not necessary.");
+        });
 
-        await File.WriteAllTextAsync("CANNOT_SEE_SERVER.txt", cannotSeeServerBuilder.ToString(), cancellationToken);
-
-        await client.CallAsync<bool>("Authenticate", ["SuperAdmin", "SuperAdmin"], cancellationToken);
-        await client.CallAsync<bool>("EnableCallbacks", [true], cancellationToken);
-
-        await client.CallAsync("SetGameMode", [1], cancellationToken);
-        await client.CallAsync("SetTimeAttackLimit", [0], cancellationToken);
-        await client.CallAsync("SetChatTime", [0], cancellationToken);
-
-        await client.SystemMulticallAsync([
-            new("AddChatCommand", ["start"]),
-            new("AddChatCommand", ["skip"]),
-            new("AddChatCommand", ["imp"]),
-        ], cancellationToken);
-
-        var sessionManager = new SessionManager(client, tmxRules);
-
-        await foreach (var callback in client.StreamCallbacksAsync(cancellationToken))
+        client.Callback += async (methodName, methodParams, cancellationToken) =>
         {
-            // Handle callbacks here
-            Console.WriteLine($"{callback.MethodName} {string.Join(' ', callback.MethodParams.Select(x =>
+            Console.WriteLine($"{methodName} {string.Join(' ', methodParams.Select(x =>
             {
                 return x is Dictionary<string, object> dict
                     ? $"{{{string.Join(", ", dict.Select(kv => $"{kv.Key}: {kv.Value}"))}}}"
                     : x?.ToString() ?? "null";
             }))}");
+        };
+    }
 
-            if (callback.MethodName == "TrackMania.PlayerConnect")
+    public async Task OnCommand(int playerUid, string login, string message, CancellationToken cancellationToken)
+    {
+        var trimmedMessage = message.TrimStart('/');
+        var firstSpaceIndex = trimmedMessage.IndexOf(' ');
+        var mainCommand = firstSpaceIndex == -1 ? trimmedMessage : trimmedMessage.Substring(0, firstSpaceIndex);
+
+        if (commandHandlers.TryGetValue(mainCommand, out var handler))
+        {
+            var args = CommandArgsRegex().Matches(trimmedMessage)
+                .Cast<Match>()
+                .Skip(1)
+                .Select(m => m.Value.Trim('"'))
+                .ToArray();
+
+            await handler(playerUid, login, args, cancellationToken);
+        }
+    }
+
+    public async Task PrepareAsync(CancellationToken cancellationToken)
+    {
+        await SendWelcomeMessageAsync(login: null, cancellationToken);
+    }
+
+    private async Task StartAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
+    {
+        if (!SessionActive)
+        {
+            sessionStopwatch = new();
+            await SetTimeLimitAsync(cancellationToken);
+            await SendMessageAsync([string.Empty, "$0F0Let's begin!"], cancellationToken);
+
+            if (config.TimeLimit > 0)
             {
-                await client.CallAsync("ChatSendServerMessageToLogin", ["$FF0Welcome to $s$0BFRandomizer $FF8Anywhere$FF0!", callback.MethodParams[0]], cancellationToken);
-                await client.CallAsync("ChatSendServerMessageToLogin", ["Once you're ready, type $FF0/start", callback.MethodParams[0]], cancellationToken);
-                await client.CallAsync("ChatSendServerMessageToLogin", ["To skip a challenge, type $FF0/skip", callback.MethodParams[0]], cancellationToken);
-                await client.CallAsync("ChatSendServerMessageToLogin", ["To ban a challenge from appearing again, type $FF0/imp", callback.MethodParams[0]], cancellationToken);
+                await SendMessageAsync($"Time limit set to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
             }
 
-            if (callback.MethodName == "TrackMania.PlayerChat")
+            await NextRandomChallengeAsync(goalReached: false, cancellationToken);
+        }
+    }
+
+    private async Task SetTimeLimitAsync(CancellationToken cancellationToken)
+    {
+        await client.CallAsync("SetTimeAttackLimit", [config.TimeLimit], cancellationToken);
+    }
+
+    private async Task SetCalculatedTimeLimitAsync(CancellationToken cancellationToken)
+    {
+        if (config.TimeLimit <= 0 || sessionStopwatch is null)
+        {
+            return;
+        }
+
+        var elapsedMilliseconds = sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset;
+
+        sessionStopwatchMillisecondOffset += 1500;
+
+        await client.CallAsync("SetTimeAttackLimit", [config.TimeLimit - (int)elapsedMilliseconds], cancellationToken);
+    }
+
+    private async Task SkipAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
+    {
+        if (await IsMultiplePlayersAsync(cancellationToken))
+        {
+            await SendMessageAsync($"Player {GetNicknameOrLogin(login)} wants to skip the current challenge.", cancellationToken);
+        }
+        else
+        {
+            await SendMessageAsync("Skipping the current challenge...", cancellationToken);
+        }
+
+        await NextRandomChallengeAsync(goalReached: false, cancellationToken);
+    }
+
+    private async Task ImpossibleAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
+    {
+
+    }
+
+    private async Task CommandsAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
+    {
+        var commandList = await client.CallAsync<List<object>>("GetChatCommandList", [(int)short.MaxValue, 0], cancellationToken);
+        var commandNames = commandList.OfType<IReadOnlyDictionary<string, object>>()
+            .Select(cmd => $"$FF0{(string)cmd["Name"]}$FFF")
+            .Order();
+
+        await SendMessageAsync(login, $"Commands: {string.Join(", ", commandNames)}", cancellationToken);
+    }
+
+    private async Task TimeLimitAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
+    {
+        if (args.Length == 0)
+        {
+            if (config.TimeLimit <= 0)
             {
-                var message = (string)callback.MethodParams[2]!;
-                var isRegisteredCmd = (bool)callback.MethodParams[3]!;
-
-                if (isRegisteredCmd)
-                {
-                    if (message == "/start")
-                    {
-
-                    }
-                    else if (message == "/skip")
-                    {
-                        await sessionManager.NextRandomChallengeAsync(cancellationToken);
-                    }
-                }
+                await SendMessageAsync(login, "Time limit is currently disabled. No time pressure!", cancellationToken);
+            }
+            else
+            {
+                await SendMessageAsync(login, $"Time limit is currently set to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
             }
 
+            return;
+        }
 
-            if (callback.MethodName == "TrackMania.PlayerFinish")
+        var arg = args[0];
+
+        if (arg.Equals("help", StringComparison.OrdinalIgnoreCase))
+        {
+            await SendMessageAsync(login, "Usage: $FF0/timelimit <seconds>", cancellationToken);
+            return;
+        }
+
+        if (SessionActive)
+        {
+            await SendMessageAsync(login, "$F00Cannot change time limit while a session is active", cancellationToken);
+            return;
+        }
+
+        if (!int.TryParse(arg, out var seconds) || seconds < 0)
+        {
+            await SendMessageAsync(login, $"$F00Invalid time limit value: {arg}. Please provide a non-negative integer.", cancellationToken);
+            return;
+        }
+
+        config.TimeLimit = seconds * 1000;
+
+        if (config.TimeLimit == 0)
+        {
+            if (await IsMultiplePlayersAsync(cancellationToken))
             {
-                var score = Convert.ToInt32(callback.MethodParams[2]);
-
-                if (score > 0)
-                {
-                    await sessionManager.NextRandomChallengeAsync(cancellationToken);
-                }
+                await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has disabled the time limit.", cancellationToken);
+            }
+            else
+            {
+                await SendMessageAsync("$FF0Time limit disabled.", cancellationToken);
+            }
+        }
+        else
+        {
+            if (await IsMultiplePlayersAsync(cancellationToken))
+            {
+                await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has set the time limit to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
+            }
+            else
+            {
+                await SendMessageAsync($"$FF0Time limit set to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
             }
         }
     }
+
+    public async Task OnPlayerFinish(int playerUid, string login, int score, CancellationToken cancellationToken)
+    {
+        if (!SessionActive)
+        {
+            return;
+        }
+
+        var goalTime = config.AutoSkipMode switch
+        {
+            AutoSkipMode.AuthorMedal => currentChallenge?.AuthorTime,
+            AutoSkipMode.GoldMedal => currentChallenge?.GoldTime,
+            AutoSkipMode.SilverMedal => currentChallenge?.SilverTime,
+            AutoSkipMode.BronzeMedal => currentChallenge?.BronzeTime,
+            _ => null
+        };
+
+        if (score > 0 && (goalTime is null || score <= goalTime.Value))
+        {
+            var goalName = config.AutoSkipMode switch
+            {
+                AutoSkipMode.AuthorMedal => "Author Medal",
+                AutoSkipMode.GoldMedal => "Gold Medal",
+                AutoSkipMode.SilverMedal => "Silver Medal",
+                AutoSkipMode.BronzeMedal => "Bronze Medal",
+                _ => "finish line"
+            };
+
+            sessionStopwatch?.Stop();
+
+            if (await IsMultiplePlayersAsync(cancellationToken))
+            {
+                await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has reached the $FF0{goalName}$0F0!", cancellationToken);
+            }
+            else
+            {
+                await SendMessageAsync($"$0F0You have reached the $FF0{goalName}$0F0!", cancellationToken);
+            }
+            await SendFrozenTimeMessageAsync(cancellationToken);
+
+            //await client.CallAsync("GetValidationReplay", [login], cancellationToken);
+
+            await NextRandomChallengeAsync(goalReached: true, cancellationToken);
+        }
+    }
+
+    public async Task NextRandomChallengeAsync(bool goalReached, CancellationToken cancellationToken)
+    {
+        // In case there are multiple players, the session stopwatch cannot be stopped immediately
+        // so in case there is actually just one player, we need to account for the time it took to setup the next challenge
+        var setupWatch = Stopwatch.StartNew();
+
+        if (randomEnqueuedChallengeFileName is null)
+        {
+            var nextChallenge = await tmxRules.NextChallengeGbxAsync(cancellationToken);
+
+            await client.CallAsync<bool>("WriteFile", [nextChallenge.FileName, nextChallenge.Data], cancellationToken);
+            await client.CallAsync<bool>("InsertChallenge", [nextChallenge.FileName], cancellationToken);
+            await client.CallAsync<bool>("SetGameMode", [1], cancellationToken);
+
+            randomEnqueuedChallengeFileName = nextChallenge.FileName;
+        }
+
+        if (await IsMultiplePlayersAsync(cancellationToken) && (!goalReached || config.CallVoteOnFinish))
+        {
+            await client.CallAsync<bool>("CallVote", [XmlRpcClient.GenerateXmlPayload("NextChallenge", [])], cancellationToken);
+        }
+        else
+        {
+            if (sessionStopwatch?.IsRunning == true)
+            {
+                sessionStopwatchMillisecondOffset += (int)setupWatch.ElapsedMilliseconds;
+                sessionStopwatch.Stop();
+                await SendFrozenTimeMessageAsync(cancellationToken);
+            }
+
+            var challengeInfo = await client.CallAsync<Dictionary<string, object>>("GetChallengeInfo", [randomEnqueuedChallengeFileName], cancellationToken);
+            await SendMessageAsync($"Next challenge is ready: {challengeInfo["Name"]}", cancellationToken);
+            await client.CallAsync<bool>("NextChallenge", [], cancellationToken);
+        }
+    }
+
+    private async Task SendWelcomeMessageAsync(string? login, CancellationToken cancellationToken)
+    {
+        await SendMessageAsync(login, config.WelcomeMessage.Prepend(string.Empty), cancellationToken);
+    }
+
+    private async Task SendMessageAsync(string? login, string message, CancellationToken cancellationToken)
+    {
+        var serverMessageType = login is null ? "ChatSendServerMessage" : "ChatSendServerMessageToLogin";
+        await client.CallAsync<bool>(serverMessageType, login is null ? [message] : [message, login], cancellationToken);
+    }
+
+    private async Task SendMessageAsync(string message, CancellationToken cancellationToken)
+    {
+        await SendMessageAsync(login: null, message, cancellationToken);
+    }
+
+    private async Task SendMessageAsync(string? login, IEnumerable<string> messageLines, CancellationToken cancellationToken)
+    {
+        var serverMessageType = login is null ? "ChatSendServerMessage" : "ChatSendServerMessageToLogin";
+
+        await client.SystemMulticallAsync(messageLines
+            .Select(msg => new XmlRpcMulticall(serverMessageType, login is null ? [msg] : [msg, login])), cancellationToken);
+    }
+
+    private async Task SendMessageAsync(IEnumerable<string> messageLines, CancellationToken cancellationToken)
+    {
+        await SendMessageAsync(login: null, messageLines, cancellationToken);
+    }
+
+    private async Task<bool> IsMultiplePlayersAsync(CancellationToken cancellationToken)
+    {
+        var playerList = await client.CallAsync<List<object>>("GetPlayerList", [2, 0], cancellationToken);
+        return playerList.Count > 1;
+    }
+
+    private async Task SendFrozenTimeMessageAsync(CancellationToken cancellationToken)
+    {
+        if (config.TimeLimit <= 0 || sessionStopwatch is null)
+        {
+            return;
+        }
+
+        await SendMessageAsync($"Time limit frozen at $FF0{TimeSpan.FromMilliseconds(config.TimeLimit - (sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset)):g}", cancellationToken);
+    }
+
+    private string GetNicknameOrLogin(string login)
+    {
+        return nicknameCache.TryGetValue(login, out var nickname) ? $"$<{nickname}$>" : login;
+    }
+
+    [GeneratedRegex(@"[^\s""]+|""[^""]*""")]
+    private static partial Regex CommandArgsRegex();
 }

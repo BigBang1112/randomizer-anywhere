@@ -1,6 +1,6 @@
 ﻿using System.Net;
 
-namespace RandomizerAnywhere;
+namespace RandomizerAnywhere.Config;
 
 internal sealed class AppConfig
 {
@@ -9,4 +9,9 @@ internal sealed class AppConfig
     public ushort XmlRpcPort { get; set; }
     public Dictionary<DedicatedServerType, string> DownloadUrls { get; set; } = [];
     public string? TmxQuery { get; set; }
+    public bool NoServer { get; set; }
+    public AutoSkipMode AutoSkipMode { get; set; }
+    public int TimeLimit { get; set; }
+    public bool CallVoteOnFinish { get; set; }
+    public string[] WelcomeMessage { get; set; } = [];
 }

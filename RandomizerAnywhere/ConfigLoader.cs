@@ -1,3 +1,4 @@
+using RandomizerAnywhere.Config;
 using Tomlyn;
 
 namespace RandomizerAnywhere;
@@ -20,7 +21,7 @@ internal static class ConfigLoader
         {
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine($"Warning: failed to parse '{path}': {ex.Message}");
-            Console.WriteLine("Falling back to defaults (game = none).");
+            Console.WriteLine("Falling back to defaults.");
             Console.ResetColor();
             return new TomlConfig();
         }

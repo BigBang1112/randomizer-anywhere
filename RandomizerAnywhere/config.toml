@@ -1,6 +1,15 @@
 Game = ""
 BindIP = ""
 XmlRpcPort = 5112
+AutoSkipMode = "AuthorMedal"
+TimeLimit = 3600000
+
+WelcomeMessage = '''
+$FF0Welcome to $s$0BFRandomizer $FF8Anywhere$FF0!
+Once you're ready, type $FF0/start
+To skip a challenge, type $FF0/skip
+To ban a challenge from appearing again, type $FF0/imp
+'''
 
 [DownloadUrls]
 TMF = "http://files2.trackmaniaforever.com/TrackmaniaServer_2011-02-21.zip"

@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "Randomizer (no server)": {
+      "commandName": "Project",
+      "commandLineArgs": "--no-server"
+    },
+    "Randomizer": {
+      "commandName": "Project"
+    }
+  }
+}

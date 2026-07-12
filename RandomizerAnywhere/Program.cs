@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Http.Resilience;
 using Polly;
 using RandomizerAnywhere;
+using RandomizerAnywhere.Config;
 using System.Net;
 
 var configPath = Path.Combine(AppContext.BaseDirectory, "config.toml");
@@ -11,7 +12,11 @@ var appConfig = new AppConfig
     BindIP = string.IsNullOrEmpty(tomlConfig.BindIP) ? null : IPAddress.Parse(tomlConfig.BindIP),
     XmlRpcPort = tomlConfig.XmlRpcPort,
     DownloadUrls = tomlConfig.DownloadUrls.ToDictionary(x => Enum.Parse<DedicatedServerType>(x.Key, ignoreCase: true), x => x.Value),
-    TmxQuery = cmdConfig.TmxQuery
+    TmxQuery = cmdConfig.TmxQuery,
+    NoServer = cmdConfig.NoServer,
+    TimeLimit = tomlConfig.TimeLimit,
+    CallVoteOnFinish = tomlConfig.CallVoteOnFinish,
+    WelcomeMessage = tomlConfig.WelcomeMessage.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries)
 };
 
 if (cmdConfig.Game is null && GameTitleParser.TryParse(tomlConfig.Game, out var configuredGame))
@@ -21,6 +26,11 @@ if (cmdConfig.Game is null && GameTitleParser.TryParse(tomlConfig.Game, out var 
 else
 {
     appConfig.Game = cmdConfig.Game ?? GamePrompt.Ask();
+}
+
+if (Enum.TryParse<AutoSkipMode>(tomlConfig.AutoSkipMode, ignoreCase: true, out var autoSkipMode))
+{
+    appConfig.AutoSkipMode = autoSkipMode;
 }
 
 using var http = CreateHttpClient();
@@ -38,13 +48,16 @@ Console.CancelKeyPress += (_, _) => serverSetup.StopServer();
 
 try
 {
-    await serverSetup.SetupServerAsync();
-    await serverSetup.SetupDedicatedCfgAsync();
-    await serverSetup.SetupMatchSettingsAsync();
-    serverSetup.StartServer();
+    if (!appConfig.NoServer)
+    {
+        await serverSetup.SetupServerAsync();
+        await serverSetup.SetupDedicatedCfgAsync();
+        await serverSetup.SetupMatchSettingsAsync();
+        serverSetup.StartServer();
+    }
 
-    var randomizerGame = new RandomizerGame(tmxRules, appConfig);
-    await randomizerGame.RunAsync();
+    var randomizerSetup = new RandomizerSetup(tmxRules, appConfig);
+    await randomizerSetup.RunAsync();
 }
 finally
 {
