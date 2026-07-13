@@ -41,11 +41,11 @@ internal sealed partial class ServerSetup
         {
             case DedicatedServerType.TMF:
                 dedicatedServerDir = serverDir;
-                dedicatedExeFileName = "TrackmaniaServer.exe";
+                dedicatedExeFileName = OperatingSystem.IsWindows() ? "TrackmaniaServer.exe" : "TrackmaniaServer";
                 break;
             case DedicatedServerType.TM:
                 dedicatedServerDir = Path.Combine(serverDir, "TmDedicatedServer");
-                dedicatedExeFileName = "TrackManiaServer.exe";
+                dedicatedExeFileName = OperatingSystem.IsWindows() ? "TrackManiaServer.exe" : "TrackManiaServer";
                 break;
             default:
                 throw new InvalidOperationException($"Unsupported server type: {game}");
