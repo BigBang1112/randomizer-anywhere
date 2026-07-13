@@ -20,7 +20,7 @@ Instead of hooking into your local game client, Randomizer Anywhere downloads, c
 - Random map picking powered by [TMX](https://tm-exchange.com/) (tmnf.exchange, tmuf.exchange, nations/sunrise/original tm-exchange.com)
 - All TMX randomization filters supported
 - Ingame chat commands to control the session without leaving the game
-- Configurable session time limit that freezes/resumes correctly across map loads and reconnects
+- Configurable session time limit that freezes/resumes correctly across map loads
 - Auto skip on Author/Gold/Silver/Bronze medal, or on finish, once a session is active
 - Works solo on LAN, or with multiple players on LAN or the Internet (uses server vote-calling for skip/next map)
 
