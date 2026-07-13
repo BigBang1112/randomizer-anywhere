@@ -8,6 +8,7 @@ internal sealed class TomlConfig
     public string AutoSkipMode { get; set; } = "";
     public int TimeLimit { get; set; }
     public bool CallVoteOnFinish { get; set; }
+    public string ServerName { get; set; } = "";
     public string WelcomeMessage { get; set; } = "";
 
     public Dictionary<string, string> DownloadUrls { get; set; } = [];

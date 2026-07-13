@@ -104,36 +104,15 @@ internal sealed partial class RandomizerGame
                         sessionStopwatch?.Start();
                         break;
                     case TrackManiaStatusCode.Finish:
-                        // TODO: there should be some second tolerance
-                        var sessionExpired = config.TimeLimit > 0 
-                            && sessionStopwatch is not null 
-                            && sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset >= config.TimeLimit;
-
-                        // freeze time if it was still running
-                        if (sessionStopwatch?.IsRunning == true)
-                        {
-                            sessionStopwatch.Stop();
-
-                            if (!sessionExpired)
-                            {
-                                await SendFrozenTimeMessageAsync(cancellationToken);
-                            }
-                        }
-
-                        // if session expired, stop the session and reset the time limit
-                        if (sessionExpired)
-                        {
-                            await SendMessageAsync("$FF0Time limit reached! Stopping the session.", cancellationToken);
-                            await StopSessionAsync(cancellationToken);
-                        }
-                        else
-                        {
-                            await SetCalculatedTimeLimitAsync(cancellationToken);
-                        }
-
+                        await FinishChallengeAsync(cancellationToken);
                         break;
                 }
             }
+        });
+
+        client.On("TrackMania.EndRound", async (methodParams, cancellationToken) =>
+        {
+            await FinishChallengeAsync(cancellationToken);
         });
 
         client.Callback += async (methodName, methodParams, cancellationToken) =>
@@ -145,6 +124,36 @@ internal sealed partial class RandomizerGame
                     : x?.ToString() ?? "null";
             }))}");
         };
+    }
+
+    private async Task FinishChallengeAsync(CancellationToken cancellationToken)
+    {
+        // TODO: there should be some second tolerance
+        var sessionExpired = config.TimeLimit > 0
+            && sessionStopwatch is not null
+            && sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset >= config.TimeLimit;
+
+        // freeze time if it was still running
+        if (sessionStopwatch?.IsRunning == true)
+        {
+            sessionStopwatch.Stop();
+
+            if (!sessionExpired)
+            {
+                await SendFrozenTimeMessageAsync(cancellationToken);
+            }
+        }
+
+        // if session expired, stop the session and reset the time limit
+        if (sessionExpired)
+        {
+            await SendMessageAsync("$FF0Time limit reached! Stopping the session.", cancellationToken);
+            await StopSessionAsync(cancellationToken);
+        }
+        else
+        {
+            await SetCalculatedTimeLimitAsync(cancellationToken);
+        }
     }
 
     public async Task OnCommand(int playerUid, string login, string message, CancellationToken cancellationToken)

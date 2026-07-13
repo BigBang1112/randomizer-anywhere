@@ -14,4 +14,5 @@ internal sealed class AppConfig
     public int TimeLimit { get; set; }
     public bool CallVoteOnFinish { get; set; }
     public string[] WelcomeMessage { get; set; } = [];
+    public string? ServerName { get; set; }
 }

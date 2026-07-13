@@ -4,6 +4,8 @@ XmlRpcPort = 5112
 AutoSkipMode = "AuthorMedal"
 TimeLimit = 3600000
 
+ServerName = "$$0BFRandomizer $$FF80.1.0"
+
 WelcomeMessage = '''
 $FF0Welcome to $s$0BFRandomizer $FF8Anywhere$FF0!
 Once you're ready, type $FF0/start
