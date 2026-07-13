@@ -30,6 +30,8 @@ internal sealed partial class RandomizerGame
         commandHandlers = new()
         {
             ["start"] = StartAsync,
+            ["stop"] = StopAsync,
+            ["end"] = StopAsync,
             ["skip"] = SkipAsync,
             ["imp"] = ImpossibleAsync,
             ["commands"] = CommandsAsync,
@@ -102,13 +104,33 @@ internal sealed partial class RandomizerGame
                         sessionStopwatch?.Start();
                         break;
                     case TrackManiaStatusCode.Finish:
+                        // TODO: there should be some second tolerance
+                        var sessionExpired = config.TimeLimit > 0 
+                            && sessionStopwatch is not null 
+                            && sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset >= config.TimeLimit;
+
                         // freeze time if it was still running
                         if (sessionStopwatch?.IsRunning == true)
                         {
                             sessionStopwatch.Stop();
-                            await SendFrozenTimeMessageAsync(cancellationToken);
+
+                            if (!sessionExpired)
+                            {
+                                await SendFrozenTimeMessageAsync(cancellationToken);
+                            }
                         }
-                        await SetCalculatedTimeLimitAsync(cancellationToken);
+
+                        // if session expired, stop the session and reset the time limit
+                        if (sessionExpired)
+                        {
+                            await SendMessageAsync("$FF0Time limit reached! Stopping the session.", cancellationToken);
+                            await StopSessionAsync(cancellationToken);
+                        }
+                        else
+                        {
+                            await SetCalculatedTimeLimitAsync(cancellationToken);
+                        }
+
                         break;
                 }
             }
@@ -163,6 +185,38 @@ internal sealed partial class RandomizerGame
 
             await NextRandomChallengeAsync(goalReached: false, cancellationToken);
         }
+    }
+
+    private async Task StopAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
+    {
+        if (!SessionActive)
+        {
+            await SendMessageAsync(login, "$F00No active session to stop.", cancellationToken);
+            return;
+        }
+
+        await StopSessionAsync(cancellationToken);
+
+        if (await IsMultiplePlayersAsync(cancellationToken))
+        {
+            await SendMessageAsync($"$FF0Player {GetNicknameOrLogin(login)} has stopped the session!", cancellationToken);
+        }
+        else
+        {
+            await SendMessageAsync("$F00Session stopped!", cancellationToken);
+        }
+    }
+
+    private async Task StopSessionAsync(CancellationToken cancellationToken)
+    {
+        sessionStopwatch?.Stop();
+        sessionStopwatch = null;
+        sessionStopwatchMillisecondOffset = 0;
+        currentChallenge = null;
+        randomEnqueuedChallengeFileName = null;
+
+        await client.CallAsync("SetTimeAttackLimit", [0], cancellationToken);
+        await client.CallAsync("ChallengeRestart", cancellationToken);
     }
 
     private async Task SetTimeLimitAsync(CancellationToken cancellationToken)
@@ -259,7 +313,7 @@ internal sealed partial class RandomizerGame
             }
             else
             {
-                await SendMessageAsync("$FF0Time limit disabled.", cancellationToken);
+                await SendMessageAsync("Time limit disabled.", cancellationToken);
             }
         }
         else
@@ -270,7 +324,7 @@ internal sealed partial class RandomizerGame
             }
             else
             {
-                await SendMessageAsync($"$FF0Time limit set to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
+                await SendMessageAsync($"Time limit set to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
             }
         }
     }
