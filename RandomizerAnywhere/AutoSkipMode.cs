@@ -6,5 +6,6 @@ internal enum AutoSkipMode
     GoldMedal,
     SilverMedal,
     BronzeMedal,
-    Finished
+    Finished,
+    None
 }
