@@ -4,6 +4,8 @@
 
 Instead of hooking into your local game client, Randomizer Anywhere downloads, configures, and launches a dedicated server, then drives the whole randomizer experience through a few in-game chat commands. This means it works for every player connected to the server, solo or with friends, on your machine or over the network. And on Linux, too!
 
+This project was made to support the [100% TMX Project](https://discord.gg/HRShWnzpK3).
+
 ## Supported games
 
 | Game | Dedicated server |
@@ -20,7 +22,7 @@ Instead of hooking into your local game client, Randomizer Anywhere downloads, c
 - Random map picking powered by [TMX](https://tm-exchange.com/) (tmnf.exchange, tmuf.exchange, nations/sunrise/original tm-exchange.com)
 - All TMX randomization filters supported
 - Ingame chat commands to control the session without leaving the game
-- Configurable session time limit that freezes/resumes correctly across map loads and reconnects
+- Configurable session time limit that freezes/resumes correctly across map loads
 - Auto skip on Author/Gold/Silver/Bronze medal, or on finish, once a session is active
 - Works solo on LAN, or with multiple players on LAN or the Internet (uses server vote-calling for skip/next map)
 
