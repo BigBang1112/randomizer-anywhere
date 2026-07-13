@@ -351,11 +351,10 @@ internal sealed partial class RandomizerGame
             AutoSkipMode.GoldMedal => currentChallenge?.GoldTime,
             AutoSkipMode.SilverMedal => currentChallenge?.SilverTime,
             AutoSkipMode.BronzeMedal => currentChallenge?.BronzeTime,
-            AutoSkipMode.Finished => int.MaxValue
             _ => null
         };
 
-        if (score > 0 && score <= goalTime.Value)
+        if (score > 0 && (config.AutoSkipMode == AutoSkipMode.Finished || score <= goalTime.Value))
         {
             var goalName = config.AutoSkipMode switch
             {
