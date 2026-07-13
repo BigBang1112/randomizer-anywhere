@@ -4,6 +4,8 @@
 
 Instead of hooking into your local game client, Randomizer Anywhere downloads, configures, and launches a dedicated server, then drives the whole randomizer experience through a few in-game chat commands. This means it works for every player connected to the server, solo or with friends, on your machine or over the network. And on Linux, too!
 
+This project was made to support the [100% TMX Project](https://discord.gg/HRShWnzpK3).
+
 ## Supported games
 
 | Game | Dedicated server |
