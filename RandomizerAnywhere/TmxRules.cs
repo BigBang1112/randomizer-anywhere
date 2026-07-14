@@ -48,6 +48,8 @@ internal sealed class TmxRules
                 b.Append('&');
             }
 
+            first = false;
+
             b.Append(Uri.EscapeDataString(key));
             b.Append('=');
             b.Append(Uri.EscapeDataString(Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty));
