@@ -257,7 +257,15 @@ internal sealed partial class ServerSetup
 
         if (game == DedicatedServerType.TM)
         {
-            args.Add("/game=sunrise");
+            var gameId = config.Game switch
+            {
+                GameTitle.TMN => "nations",
+                GameTitle.TMS => "stadiums",
+                GameTitle.TMO => "original",
+                _ => throw new InvalidOperationException($"Unsupported game: {config.Game}")
+            };
+
+            args.Add($"/game={gameId}");
             args.Add("/dedicated_cfg=dedicated.cfg");
         }
         else
