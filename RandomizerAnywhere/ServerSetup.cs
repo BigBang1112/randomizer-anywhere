@@ -260,7 +260,7 @@ internal sealed partial class ServerSetup
             var gameId = config.Game switch
             {
                 GameTitle.TMN => "nations",
-                GameTitle.TMS => "stadiums",
+                GameTitle.TMS => "sunrise",
                 GameTitle.TMO => "original",
                 _ => throw new InvalidOperationException($"Unsupported game: {config.Game}")
             };
