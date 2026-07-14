@@ -251,7 +251,7 @@ internal sealed partial class ServerSetup
     {
         var args = new List<string>
         {
-            "/game_settings=MatchSettings/Randomizer.txt",
+            $"/game_settings={config.GameSettings}",
             "/verbose_rpc"
         };
 

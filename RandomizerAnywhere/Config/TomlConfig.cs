@@ -13,4 +13,5 @@ internal sealed class TomlConfig
 
     public Dictionary<string, string> DownloadUrls { get; set; } = [];
     public Dictionary<string, object> TmxQuery { get; set; } = [];
+    public string GameSettings { get; set; } = "";
 }

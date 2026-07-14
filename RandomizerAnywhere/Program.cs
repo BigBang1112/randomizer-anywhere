@@ -18,6 +18,7 @@ var appConfig = new AppConfig
     CallVoteOnFinish = tomlConfig.CallVoteOnFinish,
     WelcomeMessage = tomlConfig.WelcomeMessage.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries),
     ServerName = tomlConfig.ServerName,
+    GameSettings = tomlConfig.GameSettings
 };
 
 if (cmdConfig.Game is null && GameTitleParser.TryParse(tomlConfig.Game, out var configuredGame))

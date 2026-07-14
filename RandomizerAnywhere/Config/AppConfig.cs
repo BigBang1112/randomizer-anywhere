@@ -15,4 +15,5 @@ internal sealed class AppConfig
     public bool CallVoteOnFinish { get; set; }
     public string[] WelcomeMessage { get; set; } = [];
     public string? ServerName { get; set; }
+    public string? GameSettings { get; set; }
 }
