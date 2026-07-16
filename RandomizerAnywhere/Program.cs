@@ -3,7 +3,7 @@ using Polly;
 using RandomizerAnywhere;
 using RandomizerAnywhere.Config;
 
-var configPath = Path.Combine(AppContext.BaseDirectory, "Config.toml");
+var configPath = Path.Combine(AppContext.BaseDirectory, "config.toml");
 var globalConfig = TomlLoader.LoadGlobalConfig(configPath);
 var cmdConfig = CmdConfig.Parse(args);
 var appConfig = new AppConfig

@@ -15,7 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Update="Config.toml">
+        <None Update="config.toml">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
