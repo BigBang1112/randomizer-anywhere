@@ -9,7 +9,7 @@ var cmdConfig = CmdConfig.Parse(args);
 var appConfig = new AppConfig
 {
     Game = Configurator.GetOrAskEnum(globalConfig.Game, cmdConfig.Game, "RANDANY_GAME", "a game"),
-    TmxGame = Configurator.GetOrAskEnum(globalConfig.TmxGame, cmdConfig.TmxGame, "RANDANY_TMX_GAME", "a TMX game"),
+    TmxGame = Configurator.GetOptionalEnum(globalConfig.TmxGame, cmdConfig.TmxGame, "RANDANY_TMX_GAME"),
     BindIP = Configurator.GetIP(globalConfig.BindIP, cmdConfig.BindIP, "RANDANY_BIND_IP"),
     XmlRpcPort = Configurator.GetNumber(globalConfig.XmlRpcPort, cmdConfig.XmlRpcPort, "RANDANY_XMLRPC_PORT"),
     AutoSkipMode = Configurator.GetEnum<AutoSkipMode>(globalConfig.AutoSkipMode, cmdValue: null, "RANDANY_AUTO_SKIP_MODE"),
@@ -55,10 +55,10 @@ try
 {
     if (!appConfig.NoServer)
     {
-        await serverSetup.SetupServerAsync();
+        var firstTimeSetup = await serverSetup.SetupServerAsync();
         await serverSetup.SetupDedicatedCfgAsync();
         await serverSetup.SetupMatchSettingsAsync();
-        serverSetup.StartServer();
+        serverSetup.StartServer(showServerWindow: firstTimeSetup);
     }
 
     var randomizerSetup = new RandomizerSetup(tmxRules, appConfig);

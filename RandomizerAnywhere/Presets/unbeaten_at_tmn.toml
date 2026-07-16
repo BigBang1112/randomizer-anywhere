@@ -1,0 +1,7 @@
+DisplayName = "Unbeaten AT Challenge (TMN)"
+
+TmxGame = "TMN"
+AutoSkipMode = "None"
+
+[TmxQuery]
+inauthortimebeaten = 0

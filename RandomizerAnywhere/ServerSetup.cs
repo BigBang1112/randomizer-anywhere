@@ -52,7 +52,7 @@ internal sealed partial class ServerSetup
         }
     }
 
-    public async Task SetupServerAsync(CancellationToken cancellationToken = default)
+    public async Task<bool> SetupServerAsync(CancellationToken cancellationToken = default)
     {
         var downloadUrl = config.DownloadUrls.TryGetValue(game, out var url) ? url : throw new InvalidOperationException($"Download URL for {game} not found in configuration.");
 
@@ -80,7 +80,7 @@ internal sealed partial class ServerSetup
 
         if (canUseCachedEntry && response.StatusCode == HttpStatusCode.NotModified)
         {
-            return;
+            return false;
         }
 
         response.EnsureSuccessStatusCode();
@@ -95,7 +95,7 @@ internal sealed partial class ServerSetup
         // so we can avoid re-downloading and re-extracting the archive if nothing actually changed.
         if (canUseCachedEntry && cachedEntry == newEntry)
         {
-            return;
+            return false;
         }
 
         Directory.CreateDirectory(serverDir);
@@ -116,6 +116,7 @@ internal sealed partial class ServerSetup
         }
 
         await WriteCacheEntryAsync(cacheFilePath, newEntry, cancellationToken);
+        return true;
     }
 
     public async Task SetupDedicatedCfgAsync(CancellationToken cancellationToken = default)
@@ -125,8 +126,6 @@ internal sealed partial class ServerSetup
             : Path.Combine(dedicatedServerDir, "GameData", "Config", "dedicated_cfg.txt");
 
         var contents = await File.ReadAllTextAsync(filePath, cancellationToken);
-
-        contents = ServerNameRegex().Replace(contents, $"<server_options>$1<name>{config.ServerName}</name>");
 
         if (game == DedicatedServerType.TMF)
         {
@@ -243,15 +242,15 @@ internal sealed partial class ServerSetup
 ";
         }
 
-
         await File.WriteAllTextAsync(matchSettingsFilePath, matchSettingsXml, cancellationToken);
     }
 
-    public void StartServer()
+    public void StartServer(bool showServerWindow)
     {
         var args = new List<string>
         {
             $"/game_settings={config.GameSettings}",
+            "/servername=RandomizerAnywhere",
             "/verbose_rpc"
         };
 
@@ -287,8 +286,8 @@ internal sealed partial class ServerSetup
                 WorkingDirectory = dedicatedServerDir,
                 Arguments = string.Join(' ', args),
                 UseShellExecute = false,
-                CreateNoWindow = true,
-                WindowStyle = ProcessWindowStyle.Minimized, // ProcessWindowStyle.Hidden
+                CreateNoWindow = !showServerWindow,
+                WindowStyle = showServerWindow ? ProcessWindowStyle.Normal : ProcessWindowStyle.Minimized, // ProcessWindowStyle.Hidden
             }
         };
 
@@ -385,9 +384,6 @@ internal sealed partial class ServerSetup
     }
 
     private sealed record DownloadCacheEntry(string Url, string? ETag, DateTimeOffset? LastModified, long? ContentLength);
-
-    [GeneratedRegex(@"<server_options>(\s*)<name>(.*?)<\/name>", RegexOptions.IgnoreCase)]
-    private static partial Regex ServerNameRegex();
 
     [GeneratedRegex(@"<xmlrpc_port>(\d+)<\/xmlrpc_port>", RegexOptions.IgnoreCase)]
     private static partial Regex XmlRpcPortRegex();

@@ -1,0 +1,7 @@
+DisplayName = "Wirtual Random Map Challenge"
+
+TmxGame = "TMNF"
+TimeLimit = 3600
+
+[TmxQuery]
+name = "wirtual"

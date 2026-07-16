@@ -1,0 +1,4 @@
+DisplayName = "Random Map Challenge (TMNF)"
+
+TmxGame = "TMNF"
+TimeLimit = 3600

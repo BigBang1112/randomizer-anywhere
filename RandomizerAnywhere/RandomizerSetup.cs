@@ -55,6 +55,7 @@ internal sealed class RandomizerSetup
         Console.WriteLine();
 
         await client.CallAsync<bool>("Authenticate", ["SuperAdmin", "SuperAdmin"], cancellationToken);
+        await client.CallAsync<bool>("SetServerName", [config.ServerName], cancellationToken);
         await client.CallAsync<bool>("EnableCallbacks", [true], cancellationToken);
 
         await client.CallAsync("SetTimeAttackLimit", [0], cancellationToken);

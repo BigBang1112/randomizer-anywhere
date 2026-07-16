@@ -49,17 +49,17 @@ RandomizerAnywhere [--game <game>] [--tmx-game <game>] [--tmx-query <query>] [--
 | Option | Description |
 | --- | --- |
 | `--game`, `-g <game>` | Game to set up: `TMNF`, `TMUF`, `TMN`, `TMS`, or `TMO`. Falls back to `Game` in `config.toml`, then prompts interactively if not set. |
-| `--tmx-game <game>` | TMX game to use, if different from `--game`: `TMNF`, `TMUF`, `TMN`, `TMS`, or `TMO`. |
-| `--tmx-query`, `-q <query>` | Raw TMX query string to filter randomized maps, overriding the `TmxQuery` table in `config.toml`. |
-| `--bind-ip <ip>` | IP address the dedicated server binds to. Falls back to `BindIP` in `config.toml`. |
-| `--xmlrpc-port <port>` | Port used for the GBXRemote XML-RPC connection to the dedicated server. Falls back to `XmlRpcPort` in `config.toml`. |
-| `--server-name <name>` | Name shown for the server in the game's server list. Falls back to `ServerName` in `config.toml`. |
+| `--tmx-game`, `-t <game>` | TMX site to use, if different from `--game`: `TMNF`, `TMUF`, `TMN`, `TMS`, or `TMO`. |
+| `--tmx-query`, `-q <query>` | Raw TMX query string to filter randomized maps, overriding the `TmxQuery` table in `config.toml`, as well as any modification later in the session. |
+| `--bind-ip <ip>` | IP address the dedicated server binds to. |
+| `--xmlrpc-port <port>` | Port used for the GBXRemote XML-RPC connection to the dedicated server. |
+| `--server-name <name>` | Name shown for the server in the game's server list. |
 | `--no-server` | Skip downloading/starting the dedicated server (useful if you already have one running). |
 | `--help`, `-h` | Show usage information. |
 
 ## Environment variables
 
-Every setting can also be provided through an environment variable, which is useful for containerized or headless setups. Environment variables take priority over `config.toml` but are overridden by command line arguments where an equivalent option exists.
+Many settings can also be provided through an environment variable, which is useful for containerized or headless setups. Environment variables take priority over `config.toml` but are overridden by command line arguments where an equivalent option exists.
 
 | Variable | Description |
 | --- | --- |
@@ -78,6 +78,27 @@ Presets bundle a reusable set of options into a named `.toml` file, handy for sh
 
 1. Add a `<name>.toml` file to the `Presets` folder (see `Presets/100tmx_tmnf.toml` for an example).
 2. Optionally set `Preset = "<name>"` in `config.toml` to activate it at the start of the app.
+
+The following presets are bundled:
+
+| Preset | Display name | Key features |
+| --- | --- | --- |
+| `tmnf` | Random Map Challenge (TMNF) | 1 hour time limit |
+| `tmuf` | Random Map Challenge (TMUF) | 1 hour time limit |
+| `tmn` | Random Map Challenge (TMN) | 1 hour time limit |
+| `tms` | Random Map Challenge (TMS) | 1 hour time limit |
+| `tmo` | Random Map Challenge (TMO) | 1 hour time limit |
+| `100tmx_tmnf` | 100% TMX Project (TMNF) | Excludes maps with an existing record, auto-skip on finish |
+| `100tmx_tmuf` | 100% TMX Project (TMUF) | Excludes maps with an existing record, auto-skip on finish |
+| `100tmx_tmn` | 100% TMX Project (TMN ESWC) | Excludes maps with an existing record |
+| `100tmx_tms` | 100% TMX Project (TMS) | Excludes maps with an existing record |
+| `100tmx_tmo` | 100% TMX Project (TMO) | Excludes maps with an existing record |
+| `unbeaten_at_tmnf` | Unbeaten AT Challenge (TMNF) | Only maps whose author time hasn't been beaten |
+| `unbeaten_at_tmuf` | Unbeaten AT Challenge (TMUF) | Only maps whose author time hasn't been beaten |
+| `unbeaten_at_tmn` | Unbeaten AT Challenge (TMN) | Only maps whose author time hasn't been beaten |
+| `unbeaten_at_tms` | Unbeaten AT Challenge (TMS) | Only maps whose author time hasn't been beaten |
+| `unbeaten_at_tmo` | Unbeaten AT Challenge (TMO) | Only maps whose author time hasn't been beaten |
+| `wirtual_tmnf` | Wirtual Random Map Challenge | Only map names containing the word "wirtual", 1 hour time limit |
 
 ## Configuration precedence
 

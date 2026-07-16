@@ -231,7 +231,7 @@ internal sealed partial class RandomizerGame
 
     private async Task SetTimeLimitAsync(CancellationToken cancellationToken)
     {
-        await client.CallAsync("SetTimeAttackLimit", [config.TimeLimit], cancellationToken);
+        await client.CallAsync("SetTimeAttackLimit", [config.TimeLimit.TotalMilliseconds], cancellationToken);
     }
 
     private async Task SetCalculatedTimeLimitAsync(CancellationToken cancellationToken)

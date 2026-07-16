@@ -25,7 +25,7 @@ internal sealed class CmdConfig
                 case "-h":
                     Console.WriteLine("Usage: RandomizerAnywhere [--game <game>] [--tmx-game <game>] [--tmx-query <query>] [--bind-ip <ip>] [--xmlrpc-port <port>] [--server-name <name>] [--no-server] [--help]");
                     Console.WriteLine("  --game, -g <game>         Specify the game to setup (TMNF, TMUF, TMN, TMS, TMO)");
-                    Console.WriteLine("  --tmx-game <game>         Specify the TMX game to use, if different from --game (TMNF, TMUF, TMN, TMS, TMO)");
+                    Console.WriteLine("  --tmx-game, -t <game>     Specify the TMX game to use, if different from --game (TMNF, TMUF, TMN, TMS, TMO)");
                     Console.WriteLine("  --tmx-query, -q <query>   Specify a TMX query to filter the maps");
                     Console.WriteLine("  --bind-ip <ip>            Specify the IP address the dedicated server binds to");
                     Console.WriteLine("  --xmlrpc-port <port>      Specify the XML-RPC port for the dedicated server");
@@ -49,6 +49,7 @@ internal sealed class CmdConfig
                     cmdArgs.Game = game;
                     break;
                 case "--tmx-game":
+                case "-t":
                     var tmxGameArg = enumerator.Current;
                     if (!enumerator.MoveNext())
                     {

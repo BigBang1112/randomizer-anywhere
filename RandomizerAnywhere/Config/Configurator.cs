@@ -13,7 +13,11 @@ internal static class Configurator
 
         if (!string.IsNullOrWhiteSpace(envVariableName))
         {
-            cfgValue = Environment.GetEnvironmentVariable(envVariableName);
+            var envValue = Environment.GetEnvironmentVariable(envVariableName);
+            if (!string.IsNullOrWhiteSpace(envValue))
+            {
+                cfgValue = envValue;
+            }
         }
 
         if (!string.IsNullOrWhiteSpace(cfgValue) && Enum.TryParse<T>(cfgValue.Trim(), ignoreCase: true, out var parsed))
@@ -44,12 +48,40 @@ internal static class Configurator
 
         if (!string.IsNullOrWhiteSpace(envVariableName))
         {
-            cfgValue = Environment.GetEnvironmentVariable(envVariableName);
+            var envValue = Environment.GetEnvironmentVariable(envVariableName);
+            if (!string.IsNullOrWhiteSpace(envValue))
+            {
+                cfgValue = envValue;
+            }
         }
 
         if (string.IsNullOrWhiteSpace(cfgValue) || !Enum.TryParse<T>(cfgValue.Trim(), ignoreCase: true, out var parsed))
         {
             return default;
+        }
+
+        return parsed;
+    }
+
+    public static T? GetOptionalEnum<T>(string? cfgValue, T? cmdValue, string? envVariableName) where T : struct, Enum
+    {
+        if (cmdValue.HasValue)
+        {
+            return cmdValue;
+        }
+
+        if (!string.IsNullOrWhiteSpace(envVariableName))
+        {
+            var envValue = Environment.GetEnvironmentVariable(envVariableName);
+            if (!string.IsNullOrWhiteSpace(envValue))
+            {
+                cfgValue = envValue;
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(cfgValue) || !Enum.TryParse<T>(cfgValue.Trim(), ignoreCase: true, out var parsed))
+        {
+            return null;
         }
 
         return parsed;
@@ -64,15 +96,17 @@ internal static class Configurator
 
         if (!string.IsNullOrWhiteSpace(envVariableName))
         {
-            cfgValue = Environment.GetEnvironmentVariable(envVariableName);
+            var envValue = Environment.GetEnvironmentVariable(envVariableName);
+            if (!string.IsNullOrWhiteSpace(envValue))
+            {
+                cfgValue = envValue;
+            }
         }
 
         if (string.IsNullOrWhiteSpace(cfgValue) || !IPAddress.TryParse(cfgValue.Trim(), out var ip))
         {
             return null;
         }
-
-        Console.WriteLine($"'{cfgValue}' isn't a valid IP address.");
 
         return ip;
     }
@@ -87,7 +121,6 @@ internal static class Configurator
         if (!string.IsNullOrWhiteSpace(envVariableName))
         {
             var envValue = Environment.GetEnvironmentVariable(envVariableName);
-
             if (!string.IsNullOrWhiteSpace(envValue) && ushort.TryParse(envValue.Trim(), out var parsed))
             {
                 return parsed;
@@ -107,7 +140,6 @@ internal static class Configurator
         if (!string.IsNullOrWhiteSpace(envVariableName))
         {
             var envValue = Environment.GetEnvironmentVariable(envVariableName);
-
             if (!string.IsNullOrWhiteSpace(envValue) && bool.TryParse(envValue.Trim(), out var parsed))
             {
                 return parsed;
@@ -127,7 +159,6 @@ internal static class Configurator
         if (!string.IsNullOrWhiteSpace(envVariableName))
         {
             var envValue = Environment.GetEnvironmentVariable(envVariableName);
-
             if (!string.IsNullOrWhiteSpace(envValue))
             {
                 return envValue;
