@@ -83,22 +83,22 @@ The following presets are bundled:
 
 | Preset | Display name | Key features |
 | --- | --- | --- |
-| `tmnf` | Random Map Challenge (TMNF) | 1 hour time limit |
-| `tmuf` | Random Map Challenge (TMUF) | 1 hour time limit |
-| `tmn` | Random Map Challenge (TMN) | 1 hour time limit |
-| `tms` | Random Map Challenge (TMS) | 1 hour time limit |
-| `tmo` | Random Map Challenge (TMO) | 1 hour time limit |
-| `100tmx_tmnf` | 100% TMX Project (TMNF) | Excludes maps with an existing record, auto-skip on finish |
-| `100tmx_tmuf` | 100% TMX Project (TMUF) | Excludes maps with an existing record, auto-skip on finish |
-| `100tmx_tmn` | 100% TMX Project (TMN ESWC) | Excludes maps with an existing record |
-| `100tmx_tms` | 100% TMX Project (TMS) | Excludes maps with an existing record |
-| `100tmx_tmo` | 100% TMX Project (TMO) | Excludes maps with an existing record |
-| `unbeaten_at_tmnf` | Unbeaten AT Challenge (TMNF) | Only maps whose author time hasn't been beaten |
-| `unbeaten_at_tmuf` | Unbeaten AT Challenge (TMUF) | Only maps whose author time hasn't been beaten |
-| `unbeaten_at_tmn` | Unbeaten AT Challenge (TMN) | Only maps whose author time hasn't been beaten |
-| `unbeaten_at_tms` | Unbeaten AT Challenge (TMS) | Only maps whose author time hasn't been beaten |
-| `unbeaten_at_tmo` | Unbeaten AT Challenge (TMO) | Only maps whose author time hasn't been beaten |
-| `wirtual_tmnf` | Wirtual Random Map Challenge | Only map names containing the word "wirtual", 1 hour time limit |
+| `tmnf` | Random Map Challenge (TMNF) | 1 hour time limit, auto-skip on AT |
+| `tmuf` | Random Map Challenge (TMUF) | 1 hour time limit, auto-skip on AT |
+| `tmn` | Random Map Challenge (TMN) | 1 hour time limit, auto-skip on AT |
+| `tms` | Random Map Challenge (TMS) | 1 hour time limit, auto-skip on AT |
+| `tmo` | Random Map Challenge (TMO) | 1 hour time limit, auto-skip on AT |
+| `100tmx_tmnf` | 100% TMX Project (TMNF) | Unfinished maps, auto-skip on finish |
+| `100tmx_tmuf` | 100% TMX Project (TMUF) | Unfinished maps, auto-skip on finish |
+| `100tmx_tmn` | 100% TMX Project (TMN ESWC) | Unfinished maps |
+| `100tmx_tms` | 100% TMX Project (TMS) | Unfinished maps |
+| `100tmx_tmo` | 100% TMX Project (TMO) | Unfinished maps |
+| `unbeaten_at_tmnf` | Unbeaten AT Challenge (TMNF) | Unbeaten AT maps, auto-skip on AT |
+| `unbeaten_at_tmuf` | Unbeaten AT Challenge (TMUF) | Unbeaten AT maps, auto-skip on AT |
+| `unbeaten_at_tmn` | Unbeaten AT Challenge (TMN) | Unbeaten AT maps |
+| `unbeaten_at_tms` | Unbeaten AT Challenge (TMS) | Unbeaten AT maps |
+| `unbeaten_at_tmo` | Unbeaten AT Challenge (TMO) | Unbeaten AT maps |
+| `wirtual_tmnf` | Wirtual Random Map Challenge | Map names with "wirtual", 1 hour time limit |
 
 ## Configuration precedence
 
