@@ -40,6 +40,35 @@ dotnet run --project RandomizerAnywhere
 
 Once ready, the server becomes available in your game's "Local network" menu.
 
+## Presets
+
+Presets bundle a reusable set of options into a named `.toml` file, handy for sharing curated challenge packs without editing `config.toml` directly.
+
+You can set `Preset = "<name>"` in `config.toml` to activate a certain preset at the start of the app.
+
+The following presets are bundled:
+
+| Preset | Display name | Key features |
+| --- | --- | --- |
+| `tmnf` | Random Map Challenge (TMNF) | 1 hour time limit, auto-skip on AT |
+| `tmuf` | Random Map Challenge (TMUF) | 1 hour time limit, auto-skip on AT |
+| `tmn` | Random Map Challenge (TMN) | 1 hour time limit, auto-skip on AT |
+| `tms` | Random Map Challenge (TMS) | 1 hour time limit, auto-skip on AT |
+| `tmo` | Random Map Challenge (TMO) | 1 hour time limit, auto-skip on AT |
+| `100tmx_tmnf` | 100% TMX Project (TMNF) | Unfinished maps, auto-skip on finish |
+| `100tmx_tmuf` | 100% TMX Project (TMUF) | Unfinished maps, auto-skip on finish |
+| `100tmx_tmn` | 100% TMX Project (TMN ESWC) | Unfinished maps |
+| `100tmx_tms` | 100% TMX Project (TMS) | Unfinished maps |
+| `100tmx_tmo` | 100% TMX Project (TMO) | Unfinished maps |
+| `unbeaten_at_tmnf` | Unbeaten AT Challenge (TMNF) | Unbeaten AT maps, auto-skip on AT |
+| `unbeaten_at_tmuf` | Unbeaten AT Challenge (TMUF) | Unbeaten AT maps, auto-skip on AT |
+| `unbeaten_at_tmn` | Unbeaten AT Challenge (TMN) | Unbeaten AT maps |
+| `unbeaten_at_tms` | Unbeaten AT Challenge (TMS) | Unbeaten AT maps |
+| `unbeaten_at_tmo` | Unbeaten AT Challenge (TMO) | Unbeaten AT maps |
+| `wirtual_tmnf` | Wirtual Random Map Challenge | Map names with "wirtual", 1 hour time limit |
+
+To create a new preset, add a `<name>.toml` file to the `Presets` folder (see `Presets/100tmx_tmnf.toml` for an example).
+
 ## Command line usage
 
 ```
@@ -71,34 +100,6 @@ Many settings can also be provided through an environment variable, which is use
 | `RANDANY_CALL_VOTE_ON_FINISH` | Set to `true` to call a vote to skip/next map once someone finishes, instead of an instant skip. |
 | `RANDANY_SERVER_NAME` | Name shown for the server in the game's server list. |
 | `RANDANY_GAME_SETTINGS` | Path to the match settings file used to configure the dedicated server. |
-
-## Presets
-
-Presets bundle a reusable set of options into a named `.toml` file, handy for sharing curated challenge packs (like the 100% TMX Project rules) without editing `config.toml` directly.
-
-1. Add a `<name>.toml` file to the `Presets` folder (see `Presets/100tmx_tmnf.toml` for an example).
-2. Optionally set `Preset = "<name>"` in `config.toml` to activate it at the start of the app.
-
-The following presets are bundled:
-
-| Preset | Display name | Key features |
-| --- | --- | --- |
-| `tmnf` | Random Map Challenge (TMNF) | 1 hour time limit, auto-skip on AT |
-| `tmuf` | Random Map Challenge (TMUF) | 1 hour time limit, auto-skip on AT |
-| `tmn` | Random Map Challenge (TMN) | 1 hour time limit, auto-skip on AT |
-| `tms` | Random Map Challenge (TMS) | 1 hour time limit, auto-skip on AT |
-| `tmo` | Random Map Challenge (TMO) | 1 hour time limit, auto-skip on AT |
-| `100tmx_tmnf` | 100% TMX Project (TMNF) | Unfinished maps, auto-skip on finish |
-| `100tmx_tmuf` | 100% TMX Project (TMUF) | Unfinished maps, auto-skip on finish |
-| `100tmx_tmn` | 100% TMX Project (TMN ESWC) | Unfinished maps |
-| `100tmx_tms` | 100% TMX Project (TMS) | Unfinished maps |
-| `100tmx_tmo` | 100% TMX Project (TMO) | Unfinished maps |
-| `unbeaten_at_tmnf` | Unbeaten AT Challenge (TMNF) | Unbeaten AT maps, auto-skip on AT |
-| `unbeaten_at_tmuf` | Unbeaten AT Challenge (TMUF) | Unbeaten AT maps, auto-skip on AT |
-| `unbeaten_at_tmn` | Unbeaten AT Challenge (TMN) | Unbeaten AT maps |
-| `unbeaten_at_tms` | Unbeaten AT Challenge (TMS) | Unbeaten AT maps |
-| `unbeaten_at_tmo` | Unbeaten AT Challenge (TMO) | Unbeaten AT maps |
-| `wirtual_tmnf` | Wirtual Random Map Challenge | Map names with "wirtual", 1 hour time limit |
 
 ## Configuration precedence
 
