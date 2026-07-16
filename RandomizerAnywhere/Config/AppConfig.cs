@@ -19,4 +19,5 @@ internal sealed class AppConfig
     public required string[] WelcomeMessage { get; set; }
     public required string ServerName { get; set; }
     public required string GameSettings { get; init; }
+    public PresetConfig? LastPreset { get; set; }
 }

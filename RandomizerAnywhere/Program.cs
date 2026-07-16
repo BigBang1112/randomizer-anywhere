@@ -35,6 +35,7 @@ if (!string.IsNullOrWhiteSpace(globalConfig.Preset))
     {
         var presetConfig = TomlLoader.LoadPresetConfig(presetPath);
         presetConfig?.Apply(appConfig);
+        appConfig.LastPreset = presetConfig;
     }
     else
     {

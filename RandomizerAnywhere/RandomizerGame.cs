@@ -345,7 +345,11 @@ internal sealed partial class RandomizerGame
     {
         if (args.Length == 0)
         {
-            await SendMessageAsync(login, "Usage: $FF0/preset <name>", cancellationToken);
+            var currentPresetMessage = string.IsNullOrWhiteSpace(config.LastPreset?.DisplayName)
+                ? "No preset was yet applied."
+                : $"Last preset: $FF0{config.LastPreset.DisplayName}";
+
+            await SendMessageAsync(login, [currentPresetMessage, "Usage: $FF0/preset <name>"], cancellationToken);
             return;
         }
 
@@ -375,6 +379,7 @@ internal sealed partial class RandomizerGame
         presetConfig.Apply(config);
 
         var displayName = string.IsNullOrWhiteSpace(presetConfig.DisplayName) ? presetName : presetConfig.DisplayName;
+        config.LastPreset = presetConfig;
 
         if (await IsMultiplePlayersAsync(cancellationToken))
         {
