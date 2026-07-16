@@ -1,8 +1,11 @@
 Game = ""
+TmxGame = ""
 BindIP = ""
 XmlRpcPort = 5112
 AutoSkipMode = "AuthorMedal"
 TimeLimit = 3600000
+
+Preset = ""
 
 ServerName = "$$0BFRandomizer $$FF80.1.0"
 GameSettings = "MatchSettings/Randomizer.txt"

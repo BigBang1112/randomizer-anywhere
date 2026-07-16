@@ -1,19 +1,22 @@
 ﻿using System.Net;
+using TmEssentials;
 
 namespace RandomizerAnywhere.Config;
 
 internal sealed class AppConfig
 {
-    public GameTitle Game { get; set; }
-    public IPAddress? BindIP { get; set; }
-    public ushort XmlRpcPort { get; set; }
-    public Dictionary<DedicatedServerType, string> DownloadUrls { get; set; } = [];
-    public string? TmxQuery { get; set; }
-    public bool NoServer { get; set; }
-    public AutoSkipMode AutoSkipMode { get; set; }
-    public int TimeLimit { get; set; }
-    public bool CallVoteOnFinish { get; set; }
-    public string[] WelcomeMessage { get; set; } = [];
-    public string? ServerName { get; set; }
-    public string? GameSettings { get; set; }
+    public required GameTitle Game { get; init; }
+    public required GameTitle? TmxGame { get; init; }
+    public required IPAddress? BindIP { get; init; }
+    public required ushort XmlRpcPort { get; init; }
+    public required Dictionary<DedicatedServerType, string> DownloadUrls { get; init; }
+    public required IReadOnlyDictionary<string, object> TmxQuery { get; set; }
+    public required string? TmxQueryOverride { get; set; }
+    public required bool NoServer { get; init; }
+    public required AutoSkipMode AutoSkipMode { get; set; }
+    public required TimeInt32 TimeLimit { get; set; }
+    public required bool CallVoteOnFinish { get; set; }
+    public required string[] WelcomeMessage { get; set; }
+    public required string ServerName { get; set; }
+    public required string GameSettings { get; init; }
 }

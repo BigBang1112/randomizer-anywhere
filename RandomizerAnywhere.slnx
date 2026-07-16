@@ -1,3 +1,6 @@
 <Solution>
+  <Folder Name="/Položky řešení/">
+    <File Path="README.md" />
+  </Folder>
   <Project Path="RandomizerAnywhere/RandomizerAnywhere.csproj" Id="3be15025-56f5-44ab-a737-669494b82b0c" />
 </Solution>

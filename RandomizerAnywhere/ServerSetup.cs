@@ -142,7 +142,7 @@ internal sealed partial class ServerSetup
 
     public async Task SetupMatchSettingsAsync(CancellationToken cancellationToken = default)
     {
-        var matchSettingsFilePath = Path.Combine(dedicatedServerDir, "GameData", "Tracks", "MatchSettings", "Randomizer.txt");
+        var matchSettingsFilePath = Path.Combine(dedicatedServerDir, "GameData", "Tracks", config.GameSettings);
 
         var warmupChallengeGbxFile = await tmxRules.NextChallengeGbxAsync(cancellationToken);
         await File.WriteAllBytesAsync(Path.Combine(dedicatedServerDir, "GameData", "Tracks", warmupChallengeGbxFile.FileName), warmupChallengeGbxFile.Data, cancellationToken);

@@ -1,0 +1,5 @@
+TmxGame = "TMUF"
+AutoSkipMode = "Finished"
+
+[TmxQuery]
+inhasrecord = 0

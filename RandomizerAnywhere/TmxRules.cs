@@ -10,33 +10,23 @@ internal sealed class TmxRules
     private readonly HttpClient http;
     private readonly AppConfig config;
 
-    public required GameTitle Game { get; set; }
-
-    public IReadOnlyDictionary<string, object> QueryParameters { get; set; } = new Dictionary<string, object>();
-
-    public static IReadOnlyDictionary<string, object> GetDefaultQueryParameters(GameTitle game) =>
-        new Dictionary<string, object>
-        {
-            ["primarytype"] = 0,
-        };
+    private readonly GameTitle game;
 
     public TmxRules(HttpClient http, AppConfig config)
     {
         this.http = http;
         this.config = config;
+
+        game = config.TmxGame ?? config.Game;
     }
 
     public string BuildQuery()
     {
-        var parameters = QueryParameters.Count > 0
-            ? QueryParameters
-            : GetDefaultQueryParameters(Game);
-
         var b = new StringBuilder();
 
         var first = true;
 
-        foreach (var (key, value) in parameters)
+        foreach (var (key, value) in config.TmxQuery)
         {
             if (string.IsNullOrWhiteSpace(key))
             {
@@ -61,14 +51,14 @@ internal sealed class TmxRules
     public string GetRandomTrackUrl() => $"https://{GetSiteUrl()}/trackrandom";
     public string GetTrackGbxUrl(string trackId) => $"https://{GetSiteUrl()}/trackgbx/{trackId}";
 
-    public string GetSiteUrl() => Game switch
+    public string GetSiteUrl() => game switch
     {
         GameTitle.TMNF => "tmnf.exchange",
         GameTitle.TMUF => "tmuf.exchange",
         GameTitle.TMN => "nations.tm-exchange.com",
         GameTitle.TMS => "sunrise.tm-exchange.com",
         GameTitle.TMO => "original.tm-exchange.com",
-        _ => throw new ArgumentOutOfRangeException(nameof(Game), Game, "Unknown game title."),
+        _ => throw new Exception("Unknown game title"),
     };
 
     public static SearchValues<char> InvalidFileNameCharSearchValues { get; } = SearchValues.Create([
@@ -81,7 +71,7 @@ internal sealed class TmxRules
 
     public async Task<InMemoryFile> NextChallengeGbxAsync(CancellationToken cancellationToken = default)
     {
-        var tmxRandomUrl = $"{GetRandomTrackUrl()}?{config.TmxQuery ?? BuildQuery()}";
+        var tmxRandomUrl = $"{GetRandomTrackUrl()}?{config.TmxQueryOverride ?? BuildQuery()}";
 
         using var request = new HttpRequestMessage(HttpMethod.Head, tmxRandomUrl);
         using var response = await http.SendAsync(request, cancellationToken);

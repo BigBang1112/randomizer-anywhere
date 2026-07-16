@@ -43,15 +43,54 @@ Once ready, the server becomes available in your game's "Local network" menu.
 ## Command line usage
 
 ```
-RandomizerAnywhere [--game <game>] [--tmx-query <query>] [--no-server] [--help]
+RandomizerAnywhere [--game <game>] [--tmx-game <game>] [--tmx-query <query>] [--bind-ip <ip>] [--xmlrpc-port <port>] [--server-name <name>] [--no-server] [--help]
 ```
 
 | Option | Description |
 | --- | --- |
 | `--game`, `-g <game>` | Game to set up: `TMNF`, `TMUF`, `TMN`, `TMS`, or `TMO`. Falls back to `Game` in `config.toml`, then prompts interactively if not set. |
+| `--tmx-game <game>` | TMX game to use, if different from `--game`: `TMNF`, `TMUF`, `TMN`, `TMS`, or `TMO`. |
 | `--tmx-query`, `-q <query>` | Raw TMX query string to filter randomized maps, overriding the `TmxQuery` table in `config.toml`. |
+| `--bind-ip <ip>` | IP address the dedicated server binds to. Falls back to `BindIP` in `config.toml`. |
+| `--xmlrpc-port <port>` | Port used for the GBXRemote XML-RPC connection to the dedicated server. Falls back to `XmlRpcPort` in `config.toml`. |
+| `--server-name <name>` | Name shown for the server in the game's server list. Falls back to `ServerName` in `config.toml`. |
 | `--no-server` | Skip downloading/starting the dedicated server (useful if you already have one running). |
 | `--help`, `-h` | Show usage information. |
+
+## Environment variables
+
+Every setting can also be provided through an environment variable, which is useful for containerized or headless setups. Environment variables take priority over `config.toml` but are overridden by command line arguments where an equivalent option exists.
+
+| Variable | Description |
+| --- | --- |
+| `RANDANY_GAME` | Game to set up: `TMNF`, `TMUF`, `TMN`, `TMS`, or `TMO`. |
+| `RANDANY_BIND_IP` | IP address the dedicated server binds to. |
+| `RANDANY_XMLRPC_PORT` | Port used for the GBXRemote XML-RPC connection to the dedicated server. |
+| `RANDANY_AUTO_SKIP_MODE` | Auto skip trigger: `AuthorMedal`, `GoldMedal`, `SilverMedal`, `BronzeMedal`, `Finished`, or `None`. |
+| `RANDANY_NO_SERVER` | Set to `true` to skip downloading/starting the dedicated server. |
+| `RANDANY_CALL_VOTE_ON_FINISH` | Set to `true` to call a vote to skip/next map once someone finishes, instead of an instant skip. |
+| `RANDANY_SERVER_NAME` | Name shown for the server in the game's server list. |
+| `RANDANY_GAME_SETTINGS` | Path to the match settings file used to configure the dedicated server. |
+
+## Presets
+
+Presets bundle a reusable set of options into a named `.toml` file, handy for sharing curated challenge packs (like the 100% TMX Project rules) without editing `config.toml` directly.
+
+1. Add a `<name>.toml` file to the `Presets` folder (see `Presets/100tmx_tmnf.toml` for an example).
+2. Optionally set `Preset = "<name>"` in `config.toml` to activate it at the start of the app.
+
+## Configuration precedence
+
+Settings can come from multiple sources. When the same setting is provided in more than one place, the following order decides which value wins, from highest to lowest priority:
+
+```mermaid
+flowchart LR
+    A(Command line arguments) --> B(Environment variables)
+    B --> C(Preset config)
+    C --> D(Global config)
+```
+
+The final configuration state is then written into session data for leaderboard filters.
 
 ## In-game chat commands
 

@@ -2,6 +2,7 @@
 using RandomizerAnywhere.Config;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using TmEssentials;
 
 namespace RandomizerAnywhere;
 
@@ -129,9 +130,9 @@ internal sealed partial class RandomizerGame
     private async Task FinishChallengeAsync(CancellationToken cancellationToken)
     {
         // TODO: there should be some second tolerance
-        var sessionExpired = config.TimeLimit > 0
+        var sessionExpired = config.TimeLimit.TotalMilliseconds > 0
             && sessionStopwatch is not null
-            && sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset >= config.TimeLimit;
+            && sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset >= config.TimeLimit.TotalMilliseconds;
 
         // freeze time if it was still running
         if (sessionStopwatch?.IsRunning == true)
@@ -187,9 +188,9 @@ internal sealed partial class RandomizerGame
             await SetTimeLimitAsync(cancellationToken);
             await SendMessageAsync([string.Empty, "$0F0Let's begin!"], cancellationToken);
 
-            if (config.TimeLimit > 0)
+            if (config.TimeLimit.TotalMilliseconds > 0)
             {
-                await SendMessageAsync($"Time limit set to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
+                await SendMessageAsync($"Time limit set to $FF0{new TimeSpan(config.TimeLimit.Ticks):g}", cancellationToken);
             }
 
             await NextRandomChallengeAsync(goalReached: false, cancellationToken);
@@ -235,7 +236,7 @@ internal sealed partial class RandomizerGame
 
     private async Task SetCalculatedTimeLimitAsync(CancellationToken cancellationToken)
     {
-        if (config.TimeLimit <= 0 || sessionStopwatch is null)
+        if (config.TimeLimit.TotalMilliseconds <= 0 || sessionStopwatch is null)
         {
             return;
         }
@@ -244,7 +245,7 @@ internal sealed partial class RandomizerGame
 
         sessionStopwatchMillisecondOffset += 1500;
 
-        await client.CallAsync("SetTimeAttackLimit", [config.TimeLimit - (int)elapsedMilliseconds], cancellationToken);
+        await client.CallAsync("SetTimeAttackLimit", [config.TimeLimit.TotalMilliseconds - (int)elapsedMilliseconds], cancellationToken);
     }
 
     private async Task SkipAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
@@ -280,13 +281,13 @@ internal sealed partial class RandomizerGame
     {
         if (args.Length == 0)
         {
-            if (config.TimeLimit <= 0)
+            if (config.TimeLimit.TotalMilliseconds <= 0)
             {
                 await SendMessageAsync(login, "Time limit is currently disabled. No time pressure!", cancellationToken);
             }
             else
             {
-                await SendMessageAsync(login, $"Time limit is currently set to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
+                await SendMessageAsync(login, $"Time limit is currently set to $FF0{new TimeSpan(config.TimeLimit.Ticks):g}", cancellationToken);
             }
 
             return;
@@ -312,9 +313,9 @@ internal sealed partial class RandomizerGame
             return;
         }
 
-        config.TimeLimit = seconds * 1000;
+        config.TimeLimit = new TimeInt32(seconds * 1000);
 
-        if (config.TimeLimit == 0)
+        if (config.TimeLimit.TotalMilliseconds == 0)
         {
             if (await IsMultiplePlayersAsync(cancellationToken))
             {
@@ -329,11 +330,11 @@ internal sealed partial class RandomizerGame
         {
             if (await IsMultiplePlayersAsync(cancellationToken))
             {
-                await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has set the time limit to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
+                await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has set the time limit to $FF0{new TimeSpan(config.TimeLimit.Ticks):g}", cancellationToken);
             }
             else
             {
-                await SendMessageAsync($"Time limit set to $FF0{TimeSpan.FromMilliseconds(config.TimeLimit):g}", cancellationToken);
+                await SendMessageAsync($"Time limit set to $FF0{new TimeSpan(config.TimeLimit.Ticks):g}", cancellationToken);
             }
         }
     }
@@ -456,12 +457,14 @@ internal sealed partial class RandomizerGame
 
     private async Task SendFrozenTimeMessageAsync(CancellationToken cancellationToken)
     {
-        if (config.TimeLimit <= 0 || sessionStopwatch is null)
+        if (config.TimeLimit.TotalMilliseconds <= 0 || sessionStopwatch is null)
         {
             return;
         }
 
-        await SendMessageAsync($"Time limit frozen at $FF0{TimeSpan.FromMilliseconds(config.TimeLimit - (sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset)):g}", cancellationToken);
+        var millisecondsLeft = config.TimeLimit.TotalMilliseconds - (sessionStopwatch.ElapsedMilliseconds - sessionStopwatchMillisecondOffset);
+
+        await SendMessageAsync($"Time limit frozen at $FF0{TimeSpan.FromMilliseconds(millisecondsLeft):g}", cancellationToken);
     }
 
     private string GetNicknameOrLogin(string login)
