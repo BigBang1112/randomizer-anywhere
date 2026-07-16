@@ -12,9 +12,9 @@ GameSettings = "MatchSettings/Randomizer.txt"
 
 WelcomeMessage = '''
 $FF0Welcome to $s$0BFRandomizer $FF8Anywhere$FF0!
+To pick a preset, see $FF0/presets
 Once you're ready, type $FF0/start
-To skip a challenge, type $FF0/skip
-To ban a challenge from appearing again, type $FF0/imp
+To skip a map, type $FF0/skip
 '''
 
 [DownloadUrls]

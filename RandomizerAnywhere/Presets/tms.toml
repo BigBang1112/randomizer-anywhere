@@ -1,4 +1,4 @@
 DisplayName = "Random Map Challenge (TMS)"
 
 TmxGame = "TMS"
-TimeLimit = 3600
+TimeLimit = 3600000

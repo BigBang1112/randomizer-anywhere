@@ -79,7 +79,7 @@ RandomizerAnywhere [--game <game>] [--tmx-game <game>] [--tmx-query <query>] [--
 | --- | --- |
 | `--game`, `-g <game>` | Game to set up: `TMNF`, `TMUF`, `TMN`, `TMS`, or `TMO`. Falls back to `Game` in `config.toml`, then prompts interactively if not set. |
 | `--tmx-game`, `-t <game>` | TMX site to use, if different from `--game`: `TMNF`, `TMUF`, `TMN`, `TMS`, or `TMO`. |
-| `--tmx-query`, `-q <query>` | Raw TMX query string to filter randomized maps, overriding the `TmxQuery` table in `config.toml`, as well as any modification later in the session. |
+| `--tmx-query`, `-q <query>` | Raw TMX query string to filter randomized maps, overriding the `TmxQuery` table in `config.toml`, as well as any modification later in the setup. |
 | `--bind-ip <ip>` | IP address the dedicated server binds to. |
 | `--xmlrpc-port <port>` | Port used for the GBXRemote XML-RPC connection to the dedicated server. |
 | `--server-name <name>` | Name shown for the server in the game's server list. |
@@ -97,9 +97,9 @@ Many settings can also be provided through an environment variable, which is use
 | `RANDANY_XMLRPC_PORT` | Port used for the GBXRemote XML-RPC connection to the dedicated server. |
 | `RANDANY_AUTO_SKIP_MODE` | Auto skip trigger: `AuthorMedal`, `GoldMedal`, `SilverMedal`, `BronzeMedal`, `Finished`, or `None`. |
 | `RANDANY_NO_SERVER` | Set to `true` to skip downloading/starting the dedicated server. |
-| `RANDANY_CALL_VOTE_ON_FINISH` | Set to `true` to call a vote to skip/next map once someone finishes, instead of an instant skip. |
+| `RANDANY_CALLVOTE_ON_FINISH` | Set to `true` to call a vote to skip/next map once someone finishes, instead of an instant skip. |
 | `RANDANY_SERVER_NAME` | Name shown for the server in the game's server list. |
-| `RANDANY_GAME_SETTINGS` | Path to the match settings file used to configure the dedicated server. |
+| `RANDANY_GAMESETTINGS` | Path to the match settings file used to configure the dedicated server. |
 
 ## Configuration precedence
 
@@ -123,6 +123,8 @@ The final configuration state is then written into session data for leaderboard 
 | `/skip` | Skips the current challenge for a new random one. |
 | `/imp` | Marks the current challenge as impossible so it won't appear again. |
 | `/timelimit`, `/tl <seconds>` | Shows or sets the session time limit (only while no session is active). |
+| `/preset <name>` | Applies a bundled preset by name (only while no session is active). |
+| `/presets` | Lists all available presets. |
 | `/commands` | Lists all available chat commands. |
 
 ## Special thanks

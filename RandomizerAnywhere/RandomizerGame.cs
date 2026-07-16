@@ -37,7 +37,9 @@ internal sealed partial class RandomizerGame
             ["imp"] = ImpossibleAsync,
             ["commands"] = CommandsAsync,
             ["timelimit"] = TimeLimitAsync,
-            ["tl"] = TimeLimitAsync
+            ["tl"] = TimeLimitAsync,
+            ["preset"] = PresetAsync,
+            ["presets"] = PresetsAsync
         };
 
         client.On("TrackMania.BeginRace", async (methodParams, cancellationToken) =>
@@ -337,6 +339,75 @@ internal sealed partial class RandomizerGame
                 await SendMessageAsync($"Time limit set to $FF0{new TimeSpan(config.TimeLimit.Ticks):g}", cancellationToken);
             }
         }
+    }
+
+    private async Task PresetAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
+    {
+        if (args.Length == 0)
+        {
+            await SendMessageAsync(login, "Usage: $FF0/preset <name>", cancellationToken);
+            return;
+        }
+
+        if (SessionActive)
+        {
+            await SendMessageAsync(login, "$F00Cannot change preset while a session is active", cancellationToken);
+            return;
+        }
+
+        var presetName = args[0];
+        var presetPath = Path.Combine(AppContext.BaseDirectory, "Presets", presetName + ".toml");
+
+        if (!File.Exists(presetPath))
+        {
+            await SendMessageAsync(login, $"$F00Preset '{presetName}' not found.", cancellationToken);
+            return;
+        }
+
+        var presetConfig = TomlLoader.LoadPresetConfig(presetPath);
+
+        if (presetConfig is null)
+        {
+            await SendMessageAsync(login, $"$F00Failed to load preset '{presetName}'.", cancellationToken);
+            return;
+        }
+
+        presetConfig.Apply(config);
+
+        var displayName = string.IsNullOrWhiteSpace(presetConfig.DisplayName) ? presetName : presetConfig.DisplayName;
+
+        if (await IsMultiplePlayersAsync(cancellationToken))
+        {
+            await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has applied the $FF0{displayName}$FFF preset.", cancellationToken);
+        }
+        else
+        {
+            await SendMessageAsync($"$0F0Preset $FF0{displayName}$0F0 applied.", cancellationToken);
+        }
+    }
+
+    private async Task PresetsAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
+    {
+        var presetsDir = Path.Combine(AppContext.BaseDirectory, "Presets");
+
+        if (!Directory.Exists(presetsDir))
+        {
+            await SendMessageAsync(login, "$F00No presets available.", cancellationToken);
+            return;
+        }
+
+        var presetNames = Directory.EnumerateFiles(presetsDir, "*.toml")
+            .Select(path => $"$FF0{Path.GetFileNameWithoutExtension(path)}$FFF")
+            .Order()
+            .ToList();
+
+        if (presetNames.Count == 0)
+        {
+            await SendMessageAsync(login, "$F00No presets available.", cancellationToken);
+            return;
+        }
+
+        await SendMessageAsync(login, [$"Presets: {string.Join(", ", presetNames)}", "Select a preset using $FF0/preset <name>$FFF"], cancellationToken);
     }
 
     public async Task OnPlayerFinish(int playerUid, string login, int score, CancellationToken cancellationToken)

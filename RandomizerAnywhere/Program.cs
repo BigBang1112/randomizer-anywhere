@@ -21,10 +21,10 @@ var appConfig = new AppConfig
     TmxQueryOverride = cmdConfig.TmxQuery,
     NoServer = Configurator.GetBool(cfgValue: null, cmdConfig.NoServer, "RANDANY_NO_SERVER"),
     TimeLimit = new(globalConfig.TimeLimit),
-    CallVoteOnFinish = Configurator.GetBool(globalConfig.CallVoteOnFinish, cmdValue: null, "RANDANY_CALL_VOTE_ON_FINISH"),
+    CallVoteOnFinish = Configurator.GetBool(globalConfig.CallVoteOnFinish, cmdValue: null, "RANDANY_CALLVOTE_ON_FINISH"),
     WelcomeMessage = globalConfig.WelcomeMessage.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries),
     ServerName = Configurator.GetString(globalConfig.ServerName, cmdConfig.ServerName, "RANDANY_SERVER_NAME"),
-    GameSettings = Configurator.GetString(globalConfig.GameSettings, cmdValue: null, "RANDANY_GAME_SETTINGS"),
+    GameSettings = Configurator.GetString(globalConfig.GameSettings, cmdValue: null, "RANDANY_GAMESETTINGS"),
 };
 
 if (!string.IsNullOrWhiteSpace(globalConfig.Preset))
@@ -38,7 +38,7 @@ if (!string.IsNullOrWhiteSpace(globalConfig.Preset))
     }
     else
     {
-        Console.WriteLine($"Preset '{globalConfig.Preset}' not found at '{presetPath}'.");
+        Console.WriteLine($"Preset '{globalConfig.Preset}' not found.");
     }
 }
 
