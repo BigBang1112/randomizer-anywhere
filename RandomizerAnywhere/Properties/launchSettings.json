@@ -3,9 +3,13 @@
     "Randomizer": {
       "commandName": "Project"
     },
-    "Randomizer (no server)": {
+    "Randomizer (dedicated server)": {
       "commandName": "Project",
-      "commandLineArgs": "--no-server"
+      "commandLineArgs": "--dedicated --xmlrpc-port 5112"
+    },
+    "Randomizer (dedicated server, skip setup)": {
+      "commandName": "Project",
+      "commandLineArgs": "--dedicated --skip-setup --xmlrpc-port 5112"
     }
   }
 }

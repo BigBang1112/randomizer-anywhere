@@ -1,7 +1,7 @@
 Game = ""
 TmxGame = ""
 BindIP = ""
-XmlRpcPort = 5112
+XmlRpcPort = 5000
 AutoSkipMode = "AuthorMedal"
 TimeLimit = 3600000
 

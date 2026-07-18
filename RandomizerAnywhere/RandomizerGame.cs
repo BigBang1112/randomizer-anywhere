@@ -8,7 +8,7 @@ namespace RandomizerAnywhere;
 
 internal sealed partial class RandomizerGame
 {
-    private readonly XmlRpcClient client;
+    private readonly RemoteClient client;
     private readonly TmxRules tmxRules;
     private readonly AppConfig config;
 
@@ -22,12 +22,12 @@ internal sealed partial class RandomizerGame
 
     private bool SessionActive => sessionStopwatch is not null;
 
-    public RandomizerGame(XmlRpcClient client, TmxRules tmxRules, AppConfig config)
+    public RandomizerGame(RemoteClient client, TmxRules tmxRules, AppConfig config)
     {
         this.client = client;
         this.tmxRules = tmxRules;
         this.config = config;
-        
+
         commandHandlers = new()
         {
             ["start"] = StartAsync,
@@ -42,6 +42,19 @@ internal sealed partial class RandomizerGame
             ["presets"] = PresetsAsync
         };
 
+        /*client.Callback += async (methodName, methodParams, cancellationToken) =>
+        {
+            Console.WriteLine($"{methodName} {string.Join(' ', methodParams.Select(x =>
+            {
+                return x is Dictionary<string, object> dict
+                    ? $"{{{string.Join(", ", dict.Select(kv => $"{kv.Key}: {kv.Value}"))}}}"
+                    : x?.ToString() ?? "null";
+            }))}");
+        };*/
+    }
+
+    private void RegisterCallbacks()
+    {
         client.On("TrackMania.BeginRace", async (methodParams, cancellationToken) =>
         {
             var challengeInfo = (Dictionary<string, object>)methodParams[0];
@@ -64,8 +77,7 @@ internal sealed partial class RandomizerGame
         {
             var login = (string)methodParams[0];
 
-            var playerInfo = await client.CallAsync<Dictionary<string, object>>("GetPlayerInfo", [login], cancellationToken);
-            nicknameCache[login] = (string)playerInfo["NickName"];
+            nicknameCache[login] = await client.GetPlayerNicknameAsync(login, cancellationToken);
 
             if (!SessionActive)
             {
@@ -117,16 +129,6 @@ internal sealed partial class RandomizerGame
         {
             await FinishChallengeAsync(cancellationToken);
         });
-
-        client.Callback += async (methodName, methodParams, cancellationToken) =>
-        {
-            Console.WriteLine($"{methodName} {string.Join(' ', methodParams.Select(x =>
-            {
-                return x is Dictionary<string, object> dict
-                    ? $"{{{string.Join(", ", dict.Select(kv => $"{kv.Key}: {kv.Value}"))}}}"
-                    : x?.ToString() ?? "null";
-            }))}");
-        };
     }
 
     private async Task FinishChallengeAsync(CancellationToken cancellationToken)
@@ -177,9 +179,13 @@ internal sealed partial class RandomizerGame
         }
     }
 
-    public async Task PrepareAsync(CancellationToken cancellationToken)
+    public async Task RunAsync(CancellationToken cancellationToken = default)
     {
+        RegisterCallbacks();
+
         await SendWelcomeMessageAsync(login: null, cancellationToken);
+
+        await client.WaitForCloseAsync(cancellationToken);
     }
 
     private async Task StartAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
@@ -209,7 +215,7 @@ internal sealed partial class RandomizerGame
 
         await StopSessionAsync(cancellationToken);
 
-        if (await IsMultiplePlayersAsync(cancellationToken))
+        if (await client.IsMultiplePlayersAsync(cancellationToken))
         {
             await SendMessageAsync($"$FF0Player {GetNicknameOrLogin(login)} has stopped the session!", cancellationToken);
         }
@@ -228,7 +234,7 @@ internal sealed partial class RandomizerGame
         randomEnqueuedChallengeFileName = null;
 
         await client.CallAsync("SetTimeAttackLimit", [0], cancellationToken);
-        await client.CallAsync("ChallengeRestart", cancellationToken);
+        await client.CallAsync("ChallengeRestart", [], cancellationToken);
     }
 
     private async Task SetTimeLimitAsync(CancellationToken cancellationToken)
@@ -252,7 +258,7 @@ internal sealed partial class RandomizerGame
 
     private async Task SkipAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
     {
-        if (await IsMultiplePlayersAsync(cancellationToken))
+        if (await client.IsMultiplePlayersAsync(cancellationToken))
         {
             await SendMessageAsync($"Player {GetNicknameOrLogin(login)} wants to skip the current challenge.", cancellationToken);
         }
@@ -271,12 +277,12 @@ internal sealed partial class RandomizerGame
 
     private async Task CommandsAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
     {
-        var commandList = await client.CallAsync<List<object>>("GetChatCommandList", [(int)short.MaxValue, 0], cancellationToken);
-        var commandNames = commandList.OfType<IReadOnlyDictionary<string, object>>()
-            .Select(cmd => $"$FF0{(string)cmd["Name"]}$FFF")
+        var commands = await client.GetChatCommandListAsync(cancellationToken);
+        var formattedCommands = commands
+            .Select(cmd => $"$FF0{cmd}$FFF")
             .Order();
 
-        await SendMessageAsync(login, $"Commands: {string.Join(", ", commandNames)}", cancellationToken);
+        await SendMessageAsync(login, $"Commands: {string.Join(", ", formattedCommands)}", cancellationToken);
     }
 
     private async Task TimeLimitAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
@@ -319,7 +325,7 @@ internal sealed partial class RandomizerGame
 
         if (config.TimeLimit.TotalMilliseconds == 0)
         {
-            if (await IsMultiplePlayersAsync(cancellationToken))
+            if (await client.IsMultiplePlayersAsync(cancellationToken))
             {
                 await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has disabled the time limit.", cancellationToken);
             }
@@ -330,7 +336,7 @@ internal sealed partial class RandomizerGame
         }
         else
         {
-            if (await IsMultiplePlayersAsync(cancellationToken))
+            if (await client.IsMultiplePlayersAsync(cancellationToken))
             {
                 await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has set the time limit to $FF0{new TimeSpan(config.TimeLimit.Ticks):g}", cancellationToken);
             }
@@ -381,7 +387,7 @@ internal sealed partial class RandomizerGame
         var displayName = string.IsNullOrWhiteSpace(presetConfig.DisplayName) ? presetName : presetConfig.DisplayName;
         config.LastPreset = presetConfig;
 
-        if (await IsMultiplePlayersAsync(cancellationToken))
+        if (await client.IsMultiplePlayersAsync(cancellationToken))
         {
             await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has applied the $FF0{displayName}$FFF preset.", cancellationToken);
         }
@@ -422,16 +428,21 @@ internal sealed partial class RandomizerGame
             return;
         }
 
-        var goalTime = config.AutoSkipMode switch
+        if (currentChallenge is null)
         {
-            AutoSkipMode.AuthorMedal => currentChallenge?.AuthorTime,
-            AutoSkipMode.GoldMedal => currentChallenge?.GoldTime,
-            AutoSkipMode.SilverMedal => currentChallenge?.SilverTime,
-            AutoSkipMode.BronzeMedal => currentChallenge?.BronzeTime,
+            return;
+        }
+
+        int? goalTime = config.AutoSkipMode switch
+        {
+            AutoSkipMode.AuthorMedal => currentChallenge.AuthorTime,
+            AutoSkipMode.GoldMedal => currentChallenge.GoldTime,
+            AutoSkipMode.SilverMedal => currentChallenge.SilverTime,
+            AutoSkipMode.BronzeMedal => currentChallenge.BronzeTime,
             _ => null
         };
 
-        if (score > 0 && (config.AutoSkipMode == AutoSkipMode.Finished || score <= goalTime.Value))
+        if (score > 0 && (config.AutoSkipMode == AutoSkipMode.Finished || score <= goalTime))
         {
             var goalName = config.AutoSkipMode switch
             {
@@ -444,7 +455,7 @@ internal sealed partial class RandomizerGame
 
             sessionStopwatch?.Stop();
 
-            if (await IsMultiplePlayersAsync(cancellationToken))
+            if (await client.IsMultiplePlayersAsync(cancellationToken))
             {
                 await SendMessageAsync($"Player {GetNicknameOrLogin(login)} has reached the $FF0{goalName}$0F0!", cancellationToken);
             }
@@ -454,9 +465,9 @@ internal sealed partial class RandomizerGame
             }
             await SendFrozenTimeMessageAsync(cancellationToken);
 
-            //await client.CallAsync("GetValidationReplay", [login], cancellationToken);
-
             await NextRandomChallengeAsync(goalReached: true, cancellationToken);
+
+            //var validationData = await client.CallAsync<byte[]>("GetValidationReplay", [login], cancellationToken);
         }
     }
 
@@ -470,16 +481,16 @@ internal sealed partial class RandomizerGame
         {
             var nextChallenge = await tmxRules.NextChallengeGbxAsync(cancellationToken);
 
-            await client.CallAsync<bool>("WriteFile", [nextChallenge.FileName, nextChallenge.Data], cancellationToken);
-            await client.CallAsync<bool>("InsertChallenge", [nextChallenge.FileName], cancellationToken);
-            await client.CallAsync<bool>("SetGameMode", [1], cancellationToken);
+            await client.WriteFileAsync(Path.Combine("_RandomizerAny", nextChallenge.FileName), nextChallenge.Data, cancellationToken);
+            await client.CallAsync("InsertChallenge", [nextChallenge.FileName], cancellationToken);
+            await client.CallAsync("SetGameMode", [1], cancellationToken);
 
             randomEnqueuedChallengeFileName = nextChallenge.FileName;
         }
 
-        if (await IsMultiplePlayersAsync(cancellationToken) && (!goalReached || config.CallVoteOnFinish))
+        if (await client.IsMultiplePlayersAsync(cancellationToken) && (!goalReached || config.CallVoteOnFinish))
         {
-            await client.CallAsync<bool>("CallVote", [XmlRpcClient.GenerateXmlPayload("NextChallenge", [])], cancellationToken);
+            await client.CallAsync("CallVote", [XmlRpcClient.GenerateXmlPayload("NextChallenge", [])], cancellationToken);
         }
         else
         {
@@ -490,9 +501,9 @@ internal sealed partial class RandomizerGame
                 await SendFrozenTimeMessageAsync(cancellationToken);
             }
 
-            var challengeInfo = await client.CallAsync<Dictionary<string, object>>("GetChallengeInfo", [randomEnqueuedChallengeFileName], cancellationToken);
-            await SendMessageAsync($"Next challenge is ready: {challengeInfo["Name"]}", cancellationToken);
-            await client.CallAsync<bool>("NextChallenge", [], cancellationToken);
+            var mapName = await client.GetMapNameAsync(randomEnqueuedChallengeFileName, cancellationToken);
+            await SendMessageAsync($"Next challenge is ready: {mapName}", cancellationToken);
+            await client.CallAsync("NextChallenge", [], cancellationToken);
         }
     }
 
@@ -501,10 +512,21 @@ internal sealed partial class RandomizerGame
         await SendMessageAsync(login, config.WelcomeMessage.Prepend(string.Empty), cancellationToken);
     }
 
+    private string GetServerMessageType(string? login)
+    {
+        if (false)
+        {
+            return login is null ? "ChatSend" : "ChatSendToLogin";
+        }
+        else
+        {
+            return login is null ? "ChatSendServerMessage" : "ChatSendServerMessageToLogin";
+        }
+    }
+
     private async Task SendMessageAsync(string? login, string message, CancellationToken cancellationToken)
     {
-        var serverMessageType = login is null ? "ChatSendServerMessage" : "ChatSendServerMessageToLogin";
-        await client.CallAsync<bool>(serverMessageType, login is null ? [message] : [message, login], cancellationToken);
+        await client.CallAsync(GetServerMessageType(login), login is null ? [message] : [message, login], cancellationToken);
     }
 
     private async Task SendMessageAsync(string message, CancellationToken cancellationToken)
@@ -514,7 +536,7 @@ internal sealed partial class RandomizerGame
 
     private async Task SendMessageAsync(string? login, IEnumerable<string> messageLines, CancellationToken cancellationToken)
     {
-        var serverMessageType = login is null ? "ChatSendServerMessage" : "ChatSendServerMessageToLogin";
+        var serverMessageType = GetServerMessageType(login);
 
         await client.SystemMulticallAsync(messageLines
             .Select(msg => new XmlRpcMulticall(serverMessageType, login is null ? [msg] : [msg, login])), cancellationToken);
@@ -523,12 +545,6 @@ internal sealed partial class RandomizerGame
     private async Task SendMessageAsync(IEnumerable<string> messageLines, CancellationToken cancellationToken)
     {
         await SendMessageAsync(login: null, messageLines, cancellationToken);
-    }
-
-    private async Task<bool> IsMultiplePlayersAsync(CancellationToken cancellationToken)
-    {
-        var playerList = await client.CallAsync<List<object>>("GetPlayerList", [2, 0], cancellationToken);
-        return playerList.Count > 1;
     }
 
     private async Task SendFrozenTimeMessageAsync(CancellationToken cancellationToken)

@@ -9,8 +9,9 @@ internal sealed class CmdConfig
     public IPAddress? BindIP { get; set; }
     public ushort? XmlRpcPort { get; set; }
     public string? TmxQuery { get; set; }
-    public bool NoServer { get; set; }
+    public bool DedicatedServerMode { get; set; }
     public string? ServerName { get; set; }
+    public bool SkipSetup { get; private set; }
 
     public static CmdConfig Parse(string[] args)
     {
@@ -30,7 +31,8 @@ internal sealed class CmdConfig
                     Console.WriteLine("  --bind-ip <ip>            Specify the IP address the dedicated server binds to");
                     Console.WriteLine("  --xmlrpc-port <port>      Specify the XML-RPC port for the dedicated server");
                     Console.WriteLine("  --server-name <name>      Specify the name shown for the server in the game's server list");
-                    Console.WriteLine("  --no-server               Skip downloading/starting the dedicated server");
+                    Console.WriteLine("  --dedicated               Run the app in the dedicated server mode");
+                    Console.WriteLine("  --skip-setup              Skip the download/startup setup when running in dedicated server mode");
                     Console.WriteLine("  --help, -h                Show this help message");
                     return cmdArgs;
                 case "--game":
@@ -73,8 +75,11 @@ internal sealed class CmdConfig
                     }
                     cmdArgs.TmxQuery = enumerator.Current;
                     break;
-                case "--no-server":
-                    cmdArgs.NoServer = true;
+                case "--dedicated":
+                    cmdArgs.DedicatedServerMode = true;
+                    break;
+                case "--skip-setup":
+                    cmdArgs.SkipSetup = true;
                     break;
                 case "--bind-ip":
                     var bindIpArg = enumerator.Current;

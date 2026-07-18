@@ -11,32 +11,24 @@ namespace RandomizerAnywhere;
 
 internal sealed class RandomizerSetup
 {
-    private readonly ResiliencePipeline connectionPipeline;
+    private readonly RemoteClient client;
     private readonly TmxRules tmxRules;
     private readonly AppConfig config;
 
     private readonly HashSet<string> commands = ["help", "commands", "start", "skip", "imp", "tmxquery", "timelimit", "tl", "stop", "preset", "presets"];
 
-    private RandomizerGame? randomizerGame;
-
-    public RandomizerSetup(TmxRules tmxRules, AppConfig config)
+    public RandomizerSetup(RemoteClient client, TmxRules tmxRules, AppConfig config)
     {
+        this.client = client;
         this.tmxRules = tmxRules;
         this.config = config;
-
-        connectionPipeline = new ResiliencePipelineBuilder()
-            .AddRetry(new RetryStrategyOptions
-            {
-                MaxRetryAttempts = 5,
-                BackoffType = DelayBackoffType.Exponential
-            })
-            .Build();
     }
 
     public async Task RunAsync(CancellationToken cancellationToken = default)
     {
-        await using var client = await connectionPipeline.ExecuteAsync(async token =>
-            await XmlRpcClient.ConnectAsync(IPAddress.Loopback, config.XmlRpcPort, cancellationToken: token), cancellationToken);
+        await client.ConnectAsync(cancellationToken);
+
+        var versionInfo = await client.GetVersionAsync(cancellationToken);
 
         Console.WriteLine();
         Console.WriteLine("Ready!");
@@ -54,19 +46,32 @@ internal sealed class RandomizerSetup
 
         Console.WriteLine();
 
-        await client.CallAsync<bool>("Authenticate", ["SuperAdmin", "SuperAdmin"], cancellationToken);
-        await client.CallAsync<bool>("SetServerName", [config.ServerName], cancellationToken);
-        await client.CallAsync<bool>("EnableCallbacks", [true], cancellationToken);
+        await client.AuthenticateAsync(cancellationToken);
+        await client.SetServerNameAsync(config.ServerName, cancellationToken);
+
+        if (versionInfo.Build >= RemoteVersion.CallbackSupport)
+        {
+            await client.EnableCallbacksAsync(cancellationToken);
+        }
 
         await client.CallAsync("SetTimeAttackLimit", [0], cancellationToken);
         await client.CallAsync("SetChatTime", [0], cancellationToken);
 
+        if (!config.DedicatedServerMode)
+        {
+            var nextChallenge = await tmxRules.NextChallengeGbxAsync(cancellationToken);
+
+            var challengeFilePath = Path.Combine("_RandomizerAny", nextChallenge.FileName);
+
+            await client.WriteFileAsync(challengeFilePath, nextChallenge.Data, cancellationToken);
+            await client.CallAsync("AddChallengeList", [new string[]{challengeFilePath}], cancellationToken);
+
+            await client.CallAsync("SetGameMode", [1], cancellationToken);
+
+            await client.CallAsync("StartServerLan", [], cancellationToken);
+        }
+
         await client.SystemMulticallAsync(commands.Select(cmd => new XmlRpcMulticall("AddChatCommand", [cmd])), cancellationToken);
-
-        randomizerGame = new RandomizerGame(client, tmxRules, config);
-        await randomizerGame.PrepareAsync(cancellationToken);
-
-        await client.WaitForCloseAsync(cancellationToken);
     }
 
     private static async Task SetupCannotSeeServerAsync(CancellationToken cancellationToken)

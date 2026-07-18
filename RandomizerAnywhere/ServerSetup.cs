@@ -52,7 +52,22 @@ internal sealed partial class ServerSetup
         }
     }
 
-    public async Task<bool> SetupServerAsync(CancellationToken cancellationToken = default)
+    public async Task<bool> TrySetupAsync(CancellationToken cancellationToken = default)
+    {
+        if (!config.DedicatedServerMode || config.SkipSetup)
+        {
+            return false;
+        }
+
+        var firstTimeSetup = await SetupDedicatedServerAsync(cancellationToken);
+        await SetupDedicatedCfgAsync(cancellationToken);
+        await SetupMatchSettingsAsync(cancellationToken);
+        StartServer(showServerWindow: firstTimeSetup);
+
+        return true;
+    }
+
+    private async Task<bool> SetupDedicatedServerAsync(CancellationToken cancellationToken)
     {
         var downloadUrl = config.DownloadUrls.TryGetValue(game, out var url) ? url : throw new InvalidOperationException($"Download URL for {game} not found in configuration.");
 
@@ -119,7 +134,7 @@ internal sealed partial class ServerSetup
         return true;
     }
 
-    public async Task SetupDedicatedCfgAsync(CancellationToken cancellationToken = default)
+    private async Task SetupDedicatedCfgAsync(CancellationToken cancellationToken)
     {
         var filePath = game == DedicatedServerType.TM
             ? Path.Combine(dedicatedServerDir, "dedicated.cfg")
@@ -139,7 +154,7 @@ internal sealed partial class ServerSetup
         await File.WriteAllTextAsync(filePath, contents, cancellationToken);
     }
 
-    public async Task SetupMatchSettingsAsync(CancellationToken cancellationToken = default)
+    private async Task SetupMatchSettingsAsync(CancellationToken cancellationToken)
     {
         var matchSettingsFilePath = Path.Combine(dedicatedServerDir, "GameData", "Tracks", config.GameSettings);
 
@@ -245,7 +260,7 @@ internal sealed partial class ServerSetup
         await File.WriteAllTextAsync(matchSettingsFilePath, matchSettingsXml, cancellationToken);
     }
 
-    public void StartServer(bool showServerWindow)
+    private void StartServer(bool showServerWindow)
     {
         var args = new List<string>
         {
