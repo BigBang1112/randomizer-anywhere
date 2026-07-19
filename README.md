@@ -57,14 +57,11 @@ The following presets are bundled:
 | `tmo` | Random Map Challenge (TMO) | 1 hour time limit, auto-skip on AT |
 | `100tmx_tmnf` | 100% TMX Project (TMNF) | Unfinished maps, auto-skip on finish |
 | `100tmx_tmuf` | 100% TMX Project (TMUF) | Unfinished maps, auto-skip on finish |
+| `100tmx_tmuf_stadium` | 100% TMX Project (TMUF - Stadium) | Unfinished Stadium maps, auto-skip on finish |
 | `100tmx_tmn` | 100% TMX Project (TMN ESWC) | Unfinished maps |
-| `100tmx_tms` | 100% TMX Project (TMS) | Unfinished maps |
-| `100tmx_tmo` | 100% TMX Project (TMO) | Unfinished maps |
 | `unbeaten_at_tmnf` | Unbeaten AT Challenge (TMNF) | Unbeaten AT maps, auto-skip on AT |
 | `unbeaten_at_tmuf` | Unbeaten AT Challenge (TMUF) | Unbeaten AT maps, auto-skip on AT |
 | `unbeaten_at_tmn` | Unbeaten AT Challenge (TMN) | Unbeaten AT maps |
-| `unbeaten_at_tms` | Unbeaten AT Challenge (TMS) | Unbeaten AT maps |
-| `unbeaten_at_tmo` | Unbeaten AT Challenge (TMO) | Unbeaten AT maps |
 | `wirtual_tmnf` | Wirtual Random Map Challenge | Map names with "wirtual", 1 hour time limit |
 
 To create a new preset, add a `<name>.toml` file to the `Presets` folder (see `Presets/100tmx_tmnf.toml` for an example).

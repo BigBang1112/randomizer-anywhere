@@ -1,4 +1,5 @@
 DisplayName = "Random Map Challenge (TMO)"
+Games = ["TMO", "TMUF"]
 
 TmxGame = "TMO"
 TimeLimit = 3600000

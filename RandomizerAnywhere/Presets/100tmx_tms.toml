@@ -1,7 +1,0 @@
-DisplayName = "100% TMX Project (TMS)"
-
-TmxGame = "TMS"
-AutoSkipMode = "None"
-
-[TmxQuery]
-inhasrecord = 0

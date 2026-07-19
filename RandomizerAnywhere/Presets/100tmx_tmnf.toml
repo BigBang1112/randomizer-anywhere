@@ -1,4 +1,5 @@
 DisplayName = "100% TMX Project (TMNF)"
+Games = ["TMNF", "TMUF"]
 
 TmxGame = "TMNF"
 AutoSkipMode = "Finished"

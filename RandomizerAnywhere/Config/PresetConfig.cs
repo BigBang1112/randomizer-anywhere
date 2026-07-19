@@ -5,8 +5,8 @@ namespace RandomizerAnywhere.Config;
 internal sealed class PresetConfig
 {
     public string DisplayName { get; set; } = string.Empty;
+    public string[] Games { get; init; } = [];
 
-    //public string[] Games { get; init; } = [];
     public int TimeLimit { get; set; } = 0;
     public string AutoSkipMode { get; set; } = "AuthorMedal";
 

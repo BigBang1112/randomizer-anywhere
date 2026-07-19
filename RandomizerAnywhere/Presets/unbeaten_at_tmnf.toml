@@ -1,4 +1,5 @@
 DisplayName = "Unbeaten AT Challenge (TMNF)"
+Games = ["TMNF", "TMUF"]
 
 TmxGame = "TMNF"
 

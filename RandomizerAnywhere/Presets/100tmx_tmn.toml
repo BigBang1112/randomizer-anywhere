@@ -1,4 +1,5 @@
 DisplayName = "100% TMX Project (TMN ESWC)"
+Games = ["TMN"]
 
 TmxGame = "TMN"
 AutoSkipMode = "None"

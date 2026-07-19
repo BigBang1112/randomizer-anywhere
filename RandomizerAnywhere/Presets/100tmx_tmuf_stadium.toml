@@ -1,0 +1,10 @@
+DisplayName = "100% TMX Project (TMUF - Stadium)"
+Games = ["TMUF", "TMNF"]
+
+TmxGame = "TMUF"
+AutoSkipMode = "Finished"
+
+[TmxQuery]
+inhasrecord = 0
+environment = 6
+vehicle = 6

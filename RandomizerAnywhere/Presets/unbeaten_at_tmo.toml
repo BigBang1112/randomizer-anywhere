@@ -1,7 +1,0 @@
-DisplayName = "Unbeaten AT Challenge (TMO)"
-
-TmxGame = "TMO"
-AutoSkipMode = "None"
-
-[TmxQuery]
-inauthortimebeaten = 0

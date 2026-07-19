@@ -1,4 +1,5 @@
 DisplayName = "Unbeaten AT Challenge (TMN)"
+Games = ["TMN"]
 
 TmxGame = "TMN"
 AutoSkipMode = "None"
