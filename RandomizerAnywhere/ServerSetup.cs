@@ -158,7 +158,7 @@ internal sealed partial class ServerSetup
     {
         var matchSettingsFilePath = Path.Combine(dedicatedServerDir, "GameData", "Tracks", config.GameSettings);
 
-        var warmupChallengeGbxFile = await tmxRules.NextChallengeGbxAsync(cancellationToken);
+        var warmupChallengeGbxFile = await tmxRules.NextMapGbxAsync(cancellationToken);
         await File.WriteAllBytesAsync(Path.Combine(dedicatedServerDir, "GameData", "Tracks", warmupChallengeGbxFile.FileName), warmupChallengeGbxFile.Data, cancellationToken);
 
         string matchSettingsXml;

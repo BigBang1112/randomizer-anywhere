@@ -17,8 +17,8 @@ internal sealed partial class RandomizerGame
 
     private Stopwatch? sessionStopwatch;
     private int sessionStopwatchMillisecondOffset;
-    private ChallengeInfo? currentChallenge;
-    private string? randomEnqueuedChallengeFileName;
+    private MapInfo? currentMap;
+    private string? randomEnqueuedMapFileName;
 
     private bool SessionActive => sessionStopwatch is not null;
 
@@ -57,20 +57,20 @@ internal sealed partial class RandomizerGame
     {
         client.On("TrackMania.BeginRace", async (methodParams, cancellationToken) =>
         {
-            var challengeInfo = (Dictionary<string, object>)methodParams[0];
+            var mapInfo = (Dictionary<string, object>)methodParams[0];
 
-            currentChallenge = new ChallengeInfo(
-                AuthorTime: (int)challengeInfo["AuthorTime"],
-                GoldTime: (int)challengeInfo["GoldTime"],
-                SilverTime: (int)challengeInfo["SilverTime"],
-                BronzeTime: (int)challengeInfo["BronzeTime"]
+            currentMap = new MapInfo(
+                AuthorTime: (int)mapInfo["AuthorTime"],
+                GoldTime: (int)mapInfo["GoldTime"],
+                SilverTime: (int)mapInfo["SilverTime"],
+                BronzeTime: (int)mapInfo["BronzeTime"]
             );
         });
 
         client.On("TrackMania.EndRace", async (methodParams, cancellationToken) =>
         {
-            currentChallenge = null;
-            randomEnqueuedChallengeFileName = null;
+            currentMap = null;
+            randomEnqueuedMapFileName = null;
         });
 
         client.On("TrackMania.PlayerConnect", async (methodParams, cancellationToken) =>
@@ -119,7 +119,7 @@ internal sealed partial class RandomizerGame
                         sessionStopwatch?.Start();
                         break;
                     case TrackManiaStatusCode.Finish:
-                        await FinishChallengeAsync(cancellationToken);
+                        await FinishMapAsync(cancellationToken);
                         break;
                 }
             }
@@ -127,11 +127,11 @@ internal sealed partial class RandomizerGame
 
         client.On("TrackMania.EndRound", async (methodParams, cancellationToken) =>
         {
-            await FinishChallengeAsync(cancellationToken);
+            await FinishMapAsync(cancellationToken);
         });
     }
 
-    private async Task FinishChallengeAsync(CancellationToken cancellationToken)
+    private async Task FinishMapAsync(CancellationToken cancellationToken)
     {
         // TODO: there should be some second tolerance
         var sessionExpired = config.TimeLimit.TotalMilliseconds > 0
@@ -201,7 +201,7 @@ internal sealed partial class RandomizerGame
                 await SendMessageAsync($"Time limit set to $FF0{new TimeSpan(config.TimeLimit.Ticks):g}", cancellationToken);
             }
 
-            await NextRandomChallengeAsync(goalReached: false, cancellationToken);
+            await NextRandomMapAsync(goalReached: false, cancellationToken);
         }
     }
 
@@ -230,8 +230,8 @@ internal sealed partial class RandomizerGame
         sessionStopwatch?.Stop();
         sessionStopwatch = null;
         sessionStopwatchMillisecondOffset = 0;
-        currentChallenge = null;
-        randomEnqueuedChallengeFileName = null;
+        currentMap = null;
+        randomEnqueuedMapFileName = null;
 
         await client.CallAsync("SetTimeAttackLimit", [0], cancellationToken);
         await client.CallAsync("ChallengeRestart", [], cancellationToken);
@@ -267,7 +267,7 @@ internal sealed partial class RandomizerGame
             await SendMessageAsync("Skipping the current challenge...", cancellationToken);
         }
 
-        await NextRandomChallengeAsync(goalReached: false, cancellationToken);
+        await NextRandomMapAsync(goalReached: false, cancellationToken);
     }
 
     private async Task ImpossibleAsync(int playerUid, string login, string[] args, CancellationToken cancellationToken)
@@ -428,17 +428,17 @@ internal sealed partial class RandomizerGame
             return;
         }
 
-        if (currentChallenge is null)
+        if (currentMap is null)
         {
             return;
         }
 
         int? goalTime = config.AutoSkipMode switch
         {
-            AutoSkipMode.AuthorMedal => currentChallenge.AuthorTime,
-            AutoSkipMode.GoldMedal => currentChallenge.GoldTime,
-            AutoSkipMode.SilverMedal => currentChallenge.SilverTime,
-            AutoSkipMode.BronzeMedal => currentChallenge.BronzeTime,
+            AutoSkipMode.AuthorMedal => currentMap.AuthorTime,
+            AutoSkipMode.GoldMedal => currentMap.GoldTime,
+            AutoSkipMode.SilverMedal => currentMap.SilverTime,
+            AutoSkipMode.BronzeMedal => currentMap.BronzeTime,
             _ => null
         };
 
@@ -465,27 +465,28 @@ internal sealed partial class RandomizerGame
             }
             await SendFrozenTimeMessageAsync(cancellationToken);
 
-            await NextRandomChallengeAsync(goalReached: true, cancellationToken);
+            await NextRandomMapAsync(goalReached: true, cancellationToken);
 
             //var validationData = await client.CallAsync<byte[]>("GetValidationReplay", [login], cancellationToken);
         }
     }
 
-    public async Task NextRandomChallengeAsync(bool goalReached, CancellationToken cancellationToken)
+    public async Task NextRandomMapAsync(bool goalReached, CancellationToken cancellationToken)
     {
         // In case there are multiple players, the session stopwatch cannot be stopped immediately
         // so in case there is actually just one player, we need to account for the time it took to setup the next challenge
         var setupWatch = Stopwatch.StartNew();
 
-        if (randomEnqueuedChallengeFileName is null)
+        if (randomEnqueuedMapFileName is null)
         {
-            var nextChallenge = await tmxRules.NextChallengeGbxAsync(cancellationToken);
+            var nextMap = await tmxRules.NextMapGbxAsync(cancellationToken);
 
-            await client.WriteFileAsync(Path.Combine("_RandomizerAny", nextChallenge.FileName), nextChallenge.Data, cancellationToken);
-            await client.CallAsync("InsertChallenge", [nextChallenge.FileName], cancellationToken);
+            var mapPath = Path.Combine("_RandomizerAny", nextMap.FileName);
+            await client.WriteFileAsync(mapPath, nextMap.Data, cancellationToken);
+            await client.CallAsync("InsertChallenge", [mapPath], cancellationToken);
             await client.CallAsync("SetGameMode", [1], cancellationToken);
 
-            randomEnqueuedChallengeFileName = nextChallenge.FileName;
+            randomEnqueuedMapFileName = mapPath;
         }
 
         if (await client.IsMultiplePlayersAsync(cancellationToken) && (!goalReached || config.CallVoteOnFinish))
@@ -501,8 +502,8 @@ internal sealed partial class RandomizerGame
                 await SendFrozenTimeMessageAsync(cancellationToken);
             }
 
-            var mapName = await client.GetMapNameAsync(randomEnqueuedChallengeFileName, cancellationToken);
-            await SendMessageAsync($"Next challenge is ready: {mapName}", cancellationToken);
+            var mapName = await client.GetMapNameAsync(randomEnqueuedMapFileName, cancellationToken);
+            await SendMessageAsync($"Next map is ready: {mapName}", cancellationToken);
             await client.CallAsync("NextChallenge", [], cancellationToken);
         }
     }

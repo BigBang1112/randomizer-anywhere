@@ -69,7 +69,17 @@ internal sealed class TmxRules
         (char)31, ':', '*', '?', '\\', '/'
     ]);
 
-    public async Task<InMemoryFile> NextChallengeGbxAsync(CancellationToken cancellationToken = default)
+    public async Task<InMemoryFile> NextMapGbxAsync(CancellationToken cancellationToken = default)
+    {
+        using var trackResponse = await NextMapGbxResponseAsync(cancellationToken);
+        var gbxBytes = await trackResponse.Content.ReadAsByteArrayAsync(cancellationToken);
+        var fileName = trackResponse.Content.Headers.ContentDisposition?.FileNameStar
+            ?? trackResponse.Content.Headers.ContentDisposition?.FileName ?? (trackResponse.RequestMessage?.RequestUri?.Segments.Last() + ".Gbx");
+
+        return new InMemoryFile(GetValidFileName(fileName), gbxBytes);
+    }
+
+    private async Task<HttpResponseMessage> NextMapGbxResponseAsync(CancellationToken cancellationToken)
     {
         var tmxRandomUrl = $"{GetRandomTrackUrl()}?{config.TmxQueryOverride ?? BuildQuery()}";
 
@@ -79,14 +89,9 @@ internal sealed class TmxRules
         var trackRelativePath = response.Headers.Location?.OriginalString ?? throw new Exception("Failed to get track relative path.");
         var trackId = trackRelativePath.Substring(trackRelativePath.LastIndexOf('/') + 1);
 
-        Console.WriteLine("Next challenge track ID: " + trackId);
+        Console.WriteLine("Next track ID: " + trackId);
 
-        using var trackResponse = await http.GetAsync(GetTrackGbxUrl(trackId), cancellationToken);
-        var gbxBytes = await trackResponse.Content.ReadAsByteArrayAsync(cancellationToken);
-        var fileName = trackResponse.Content.Headers.ContentDisposition?.FileNameStar
-            ?? trackResponse.Content.Headers.ContentDisposition?.FileName ?? $"{trackId}.Gbx";
-
-        return new InMemoryFile(GetValidFileName(fileName), gbxBytes);
+        return await http.GetAsync(GetTrackGbxUrl(trackId), cancellationToken);
     }
 
     private static string GetValidFileName(string fileName)

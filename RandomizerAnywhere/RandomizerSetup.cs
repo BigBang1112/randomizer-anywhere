@@ -1,8 +1,5 @@
 ﻿using ManiaAPI.XmlRpc;
-using Polly;
-using Polly.Retry;
 using RandomizerAnywhere.Config;
-using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
@@ -49,22 +46,19 @@ internal sealed class RandomizerSetup
         await client.AuthenticateAsync(cancellationToken);
         await client.SetServerNameAsync(config.ServerName, cancellationToken);
 
-        if (versionInfo.Build >= RemoteVersion.CallbackSupport)
-        {
-            await client.EnableCallbacksAsync(cancellationToken);
-        }
+        await client.EnableCallbacksAsync(cancellationToken);
 
-        await client.CallAsync("SetTimeAttackLimit", [0], cancellationToken);
-        await client.CallAsync("SetChatTime", [0], cancellationToken);
+        await client.Raw.CallAsync("SetTimeAttackLimit", [0], cancellationToken);
+        await client.Raw.CallAsync("SetChatTime", [0], cancellationToken);
 
         if (!config.DedicatedServerMode)
         {
-            var nextChallenge = await tmxRules.NextChallengeGbxAsync(cancellationToken);
+            var nextMap = await tmxRules.NextMapGbxAsync(cancellationToken);
 
-            var challengeFilePath = Path.Combine("_RandomizerAny", nextChallenge.FileName);
+            var mapFilePath = Path.Combine("_RandomizerAny", nextMap.FileName);
 
-            await client.WriteFileAsync(challengeFilePath, nextChallenge.Data, cancellationToken);
-            await client.CallAsync("AddChallengeList", [new string[]{challengeFilePath}], cancellationToken);
+            await client.WriteFileAsync(mapFilePath, nextMap.Data, cancellationToken);
+            await client.CallAsync("AddChallengeList", [new string[]{mapFilePath}], cancellationToken);
 
             await client.CallAsync("SetGameMode", [1], cancellationToken);
 
