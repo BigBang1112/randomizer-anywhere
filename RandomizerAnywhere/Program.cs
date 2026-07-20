@@ -47,7 +47,14 @@ internal partial class AppServiceProvider
 
     public static AppConfig CreateAppConfig()
     {
+        var defaultConfigPath = Path.Combine(AppContext.BaseDirectory, "config.default.toml");
         var configPath = Path.Combine(AppContext.BaseDirectory, "config.toml");
+
+        if (!File.Exists(configPath))
+        {
+            File.Copy(defaultConfigPath, configPath);
+        }
+
         var globalConfig = TomlLoader.LoadGlobalConfig(configPath);
         var cmdConfig = CmdConfig.Parse(Environment.GetCommandLineArgs());
         var appConfig = new AppConfig
