@@ -9,9 +9,9 @@ internal sealed class CmdConfig
     public IPAddress? BindIP { get; set; }
     public ushort? XmlRpcPort { get; set; }
     public string? TmxQuery { get; set; }
-    public bool DedicatedServerMode { get; set; }
+    public bool? DedicatedServerMode { get; set; }
     public string? ServerName { get; set; }
-    public bool SkipSetup { get; private set; }
+    public bool? SkipSetup { get; private set; }
 
     public static CmdConfig Parse(string[] args)
     {
