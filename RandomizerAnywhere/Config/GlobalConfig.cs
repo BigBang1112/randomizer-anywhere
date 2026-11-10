@@ -17,5 +17,6 @@ internal sealed class GlobalConfig
     public string WelcomeMessage { get; set; } = string.Empty;
 
     public Dictionary<string, string> DownloadUrls { get; set; } = [];
+    public Dictionary<string, string> DownloadSha256 { get; set; } = [];
     public Dictionary<string, object> TmxQuery { get; set; } = [];
 }

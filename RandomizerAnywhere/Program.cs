@@ -68,6 +68,10 @@ internal partial class AppServiceProvider
                 .ToDictionary(
                     x => Enum.Parse<DedicatedServerType>(x.Key, ignoreCase: true),
                     x => x.Value),
+            DownloadSha256 = globalConfig.DownloadSha256
+                .ToDictionary(
+                    x => Enum.Parse<DedicatedServerType>(x.Key, ignoreCase: true),
+                    x => x.Value),
             TmxQuery = globalConfig.TmxQuery,
             TmxQueryOverride = cmdConfig.TmxQuery,
             DedicatedServerMode = Configurator.GetBool(cfgValue: null, cmdConfig.DedicatedServerMode, "RANDANY_DEDICATED"),
