@@ -6,5 +6,6 @@ AutoSkipMode = "Finished"
 
 [TmxQuery]
 inhasrecord = 0
+inunlimiter = 0
 environment = 6
 vehicle = 6
