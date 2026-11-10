@@ -28,7 +28,8 @@ internal static class Configurator
         while (true)
         {
             Console.Write($"Select {humanizedName} ({string.Join(", ", Enum.GetNames<T>())}): ");
-            var input = Console.ReadLine()?.Trim();
+            var input = Console.ReadLine()?.Trim()
+                ?? throw new InvalidOperationException($"No console input to select {humanizedName} from.");
 
             if (Enum.TryParse(input, ignoreCase: true, out parsed))
             {
