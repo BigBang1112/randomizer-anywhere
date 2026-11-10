@@ -10,6 +10,7 @@ internal sealed class AppConfig
     public required IPAddress? BindIP { get; init; }
     public required ushort XmlRpcPort { get; init; }
     public required Dictionary<DedicatedServerType, string> DownloadUrls { get; init; }
+    public required Dictionary<DedicatedServerType, string> DownloadSha256 { get; init; }
     public required IReadOnlyDictionary<string, object> TmxQuery { get; set; }
     public required string? TmxQueryOverride { get; set; }
     public required bool DedicatedServerMode { get; init; }

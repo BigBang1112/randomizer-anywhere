@@ -21,5 +21,10 @@ To skip a map, type $FF0/skip
 TMF = "http://files2.trackmaniaforever.com/TrackmaniaServer_2011-02-21.zip"
 TM = "http://slig.free.fr/TM/dedicated/TmDedicatedServer_2006-05-30.zip"
 
+# The servers above are downloaded over plain http and then run, so only these exact files are installed.
+[DownloadSha256]
+TMF = "dd021f49c3d58d45ee09f333015bdb35b19243a38fa65f202ca8a88fb6550c0b"
+TM = "28d79550fdd18623c47d3a428af5ce8e150402b8c4c5fa0b45d3efa4e6bf783d"
+
 [TmxQuery]
 primarytype = 0

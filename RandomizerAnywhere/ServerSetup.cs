@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Tomlyn;
 
@@ -121,6 +122,17 @@ internal sealed partial class ServerSetup
             await using (var fileStream = new FileStream(tempZipPath, FileMode.Create, FileAccess.Write, FileShare.None))
             {
                 await DownloadWithProgressAsync(response.Content, fileStream, cancellationToken);
+            }
+
+            if (config.DownloadSha256.TryGetValue(game, out var expectedHash))
+            {
+                await using var zipStream = File.OpenRead(tempZipPath);
+                var actualHash = Convert.ToHexStringLower(await SHA256.HashDataAsync(zipStream, cancellationToken));
+
+                if (!actualHash.Equals(expectedHash, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidOperationException($"The downloaded {game} server is not the expected file (SHA-256 {actualHash}), so it was not installed.");
+                }
             }
 
             await ZipFile.ExtractToDirectoryAsync(tempZipPath, serverDir, overwriteFiles: true, cancellationToken);
