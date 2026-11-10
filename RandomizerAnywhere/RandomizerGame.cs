@@ -36,6 +36,7 @@ internal sealed partial class RandomizerGame
             ["skip"] = SkipAsync,
             ["imp"] = ImpossibleAsync,
             ["commands"] = CommandsAsync,
+            ["help"] = CommandsAsync,
             ["timelimit"] = TimeLimitAsync,
             ["tl"] = TimeLimitAsync,
             ["preset"] = PresetAsync,
