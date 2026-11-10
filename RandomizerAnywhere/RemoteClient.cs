@@ -22,6 +22,9 @@ internal sealed class RemoteClient : IAsyncDisposable, IDisposable
         "yyyy-MM-dd"
     ];
 
+    // The server cuts the connection on requests over 512 KB, and WriteFile makes the map about a third bigger on the way.
+    private const int MaxWriteFileSize = (512 * 1024 - 4096) / 4 * 3;
+
     private readonly AppConfig config;
 
     private XmlRpcClient? raw;
@@ -107,7 +110,7 @@ internal sealed class RemoteClient : IAsyncDisposable, IDisposable
 
     public async Task WriteFileAsync(string filePath, byte[] fileData, CancellationToken cancellationToken = default)
     {
-        if (SupportedMethods.Contains("WriteFile"))
+        if (fileData.Length <= MaxWriteFileSize && SupportedMethods.Contains("WriteFile"))
         {
             await CallAsync("WriteFile", [filePath, fileData], cancellationToken);
             return;
