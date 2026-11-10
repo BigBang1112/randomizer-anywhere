@@ -133,7 +133,7 @@ internal sealed class RemoteClient : IAsyncDisposable, IDisposable
         }
     }
 
-    public async Task<IEnumerable<XmlRpcMulticallResult>> SystemMulticallAsync(IEnumerable<XmlRpcMulticall> calls, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<XmlRpcCallResult>> SystemMulticallAsync(IEnumerable<XmlRpcCall> calls, CancellationToken cancellationToken = default)
     {
         return await Raw.SystemMulticallAsync(calls, cancellationToken);
     }

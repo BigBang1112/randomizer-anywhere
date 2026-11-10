@@ -540,7 +540,7 @@ internal sealed partial class RandomizerGame
         var serverMessageType = GetServerMessageType(login);
 
         await client.SystemMulticallAsync(messageLines
-            .Select(msg => new XmlRpcMulticall(serverMessageType, login is null ? [msg] : [msg, login])), cancellationToken);
+            .Select(msg => new XmlRpcCall(serverMessageType, login is null ? [msg] : [msg, login])), cancellationToken);
     }
 
     private async Task SendMessageAsync(IEnumerable<string> messageLines, CancellationToken cancellationToken)

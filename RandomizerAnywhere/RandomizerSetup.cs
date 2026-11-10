@@ -65,7 +65,7 @@ internal sealed class RandomizerSetup
             await client.CallAsync("StartServerLan", [], cancellationToken);
         }
 
-        await client.SystemMulticallAsync(commands.Select(cmd => new XmlRpcMulticall("AddChatCommand", [cmd])), cancellationToken);
+        await client.SystemMulticallAsync(commands.Select(cmd => new XmlRpcCall("AddChatCommand", [cmd])), cancellationToken);
     }
 
     private static async Task SetupCannotSeeServerAsync(CancellationToken cancellationToken)
